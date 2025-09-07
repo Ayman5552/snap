@@ -190,8 +190,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if cmd == "pay_bank":
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
-            "Empfänger: Hedwig Theres\n"
-            "IBAN: <code>IE21PPSE99038051722125</code>\n"
+            "Empfänger: Euro Hunter\n"
+            "IBAN: <code>DE13 1001 0178 0362 8996 41</code>\n"
             f"{info_refund}"
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
