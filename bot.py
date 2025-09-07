@@ -198,7 +198,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif cmd == "pay_paysafe":
         text = (
             "💳 <b>PaySafeCard</b>\n\n"
-            "Bitte sende deinen 16-stelligen Code im Format:\n"
+            "Bitte sende nur den 16-stelligen Code ins Chat:\n"
             "<code>0000-0000-0000-0000</code>\n"
             f"{info_refund}"
             "\n\nDer Code wird überprüft und weitergeleitet."
