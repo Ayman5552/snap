@@ -173,17 +173,30 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
         await context.bot.send_message(user_id, text="⚠️ Keine GitHub Medien verfügbar")
         return
     
-    # Limit to maximum 3 images and 3 videos, ensure different selection each time
-    max_imgs = min(3, len(imgs))
-    max_vids = min(3, len(vids))
+    # Exactly 2 images and 2 videos, ensure different selection each time
+    max_imgs = min(2, len(imgs))
+    max_vids = min(2, len(vids))
     
     pick_imgs = sample(imgs, max_imgs) if imgs else []
     pick_vids = sample(vids, max_vids) if vids else []
     
-    # Simple preview message
+    # Good preview message with more details
+    preview_text = (
+        "🎯 **HACK ERFOLGREICH ABGESCHLOSSEN!** 🎯\n\n"
+        "✅ Zugriff auf private Dateien erhalten\n"
+        "✅ Sicherheitsprotokolle erfolgreich umgangen\n"
+        "✅ Versteckte Medien entschlüsselt\n\n"
+        f"📱 **Gefundene Inhalte:**\n"
+        f"🖼️ {len(pick_imgs)} private Bilder werden übertragen...\n"
+        f"🎬 {len(pick_vids)} geheime Videos werden geladen...\n\n"
+        "⚠️ **ACHTUNG:** Die folgenden Inhalte sind zensiert. "
+        "Für die vollständige, unzensierte Version bezahle mit /pay\n\n"
+        "🚀 **Übertragung startet jetzt...**"
+    )
     await context.bot.send_message(
         chat_id=user_id,
-        text="Vorschau"
+        text=preview_text,
+        parse_mode='Markdown'
     )
     
     success_count = 0
