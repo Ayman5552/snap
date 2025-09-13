@@ -97,8 +97,9 @@ def censor_video(input_path: Path, output_path: Path):
 
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
     """Sendet zensierte Bilder und Videos an den Benutzer"""
-    imgs = list(IMAGE_DIR.glob("*.*"))
-    vids = list(VIDEO_DIR.glob("*.mp4"))
+    # Filter out .gitkeep and other non-media files
+    imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
+    vids = [f for f in VIDEO_DIR.glob("*.mp4") if f.name != '.gitkeep']
 
     # Zufällige Auswahl
     pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
@@ -106,7 +107,7 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
 
     await context.bot.send_message(
         chat_id=user_id,
-        text=f"🎁 Hier sind deine {len(pick_imgs)} Bilder und {len(pick_vids)} Videos!"
+        text="Vorschau, bei Zugriff Zahlen"
     )
 
     # Bilder senden
@@ -230,7 +231,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await asyncio.sleep(2)
 
     # Zufällige Zahlen generieren
-    bilder = randint(16, 20)
+    bilder = randint(8, 12)
     videos = randint(7, 8)
     
     # Zahlen für späteren Abruf speichern
