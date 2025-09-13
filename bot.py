@@ -9,6 +9,9 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from PIL import Image, ImageFilter
+import urllib.request
+import zipfile
+import json
 
 from telegram import (
     Update,
@@ -48,6 +51,61 @@ VIDEO_DIR = BASE / "videos"   # MP4 hinein
 TEMP_DIR  = BASE / "temp"     # Output
 for p in (IMAGE_DIR, VIDEO_DIR, TEMP_DIR):
     p.mkdir(exist_ok=True, parents=True)
+
+# 📥 GitHub Media Downloader (Render-optimiert)
+def download_github_media():
+    """Downloads images and videos from GitHub repository"""
+    github_api_base = "https://api.github.com/repos/Ayman5552/snap/contents"
+    
+    # Check if we already have media (avoid re-download)
+    imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
+    vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
+    
+    if len(imgs) >= 5 and len(vids) >= 5:
+        print(f"✅ Media bereits vorhanden: {len(imgs)} Bilder, {len(vids)} Videos")
+        return
+    
+    print("📥 Lade Media von GitHub...")
+    
+    # Download images
+    try:
+        img_response = requests.get(f"{github_api_base}/Images", timeout=30)
+        if img_response.status_code == 200:
+            images = img_response.json()
+            print(f"📥 Lade {len(images)} Bilder von GitHub...")
+            
+            for img in images:
+                if img['name'].lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                    img_path = IMAGE_DIR / img['name']
+                    if not img_path.exists():
+                        try:
+                            urllib.request.urlretrieve(img['download_url'], img_path)
+                            print(f"✅ {img['name']} heruntergeladen")
+                        except Exception as e:
+                            print(f"❌ Fehler beim Download {img['name']}: {e}")
+    except Exception as e:
+        print(f"⚠️ Fehler beim Laden der Bilder: {e}")
+    
+    # Download videos  
+    try:
+        vid_response = requests.get(f"{github_api_base}/videos", timeout=30)
+        if vid_response.status_code == 200:
+            videos = vid_response.json()
+            print(f"📥 Lade {len(videos)} Videos von GitHub...")
+            
+            for vid in videos:
+                if vid['name'].lower().endswith(('.mp4', '.mov', '.avi')):
+                    vid_path = VIDEO_DIR / vid['name']
+                    if not vid_path.exists():
+                        try:
+                            urllib.request.urlretrieve(vid['download_url'], vid_path)
+                            print(f"✅ {vid['name']} heruntergeladen")
+                        except Exception as e:
+                            print(f"❌ Fehler beim Download {vid['name']}: {e}")
+    except Exception as e:
+        print(f"⚠️ Fehler beim Laden der Videos: {e}")
+    
+    print(f"🎯 Media-Download abgeschlossen!")
 
 # 🎛️ Blur-Einstellungen
 BLUR_IMAGE_RADIUS = 28
@@ -97,17 +155,32 @@ def censor_video(input_path: Path, output_path: Path):
 
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
     """Sendet zensierte Bilder und Videos an den Benutzer"""
+    # Re-download media if needed (für Render ephemeral filesystem)
+    download_github_media()
+    
     # Filter out .gitkeep and other non-media files
     imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
-    vids = [f for f in VIDEO_DIR.glob("*.mp4") if f.name != '.gitkeep']
+    vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
 
     # Zufällige Auswahl
     pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
     pick_vids = sample(vids, min(n_vid, len(vids))) if vids else []
 
+    # Spannende zufällige Vorschau-Nachrichten
+    preview_messages = [
+        f"🔥 EXCLUSIVE LEAK! {len(pick_imgs)} geheime Bilder + {len(pick_vids)} heiße Videos von {username} gefunden!",
+        f"💯 JACKPOT! {len(pick_imgs)} private Pics + {len(pick_vids)} inttime Videos direkt aus dem Handy!",
+        f"⚡ BOMBE! {len(pick_imgs)} Selfies + {len(pick_vids)} Stories die niemand sehen sollte!",
+        f"🎯 TREFFER! {len(pick_imgs)} versteckte Fotos + {len(pick_vids)} geheime Clips entschlüsselt!",
+        f"🔞 WARNING! {len(pick_imgs)} heiße Bilder + {len(pick_vids)} intime Videos - zu krass für Snapchat!",
+        f"💎 PREMIUM CONTENT! {len(pick_imgs)} exclusive Pics + {len(pick_vids)} private Videos nur für dich!",
+        f"🚨 LEAK ALERT! {len(pick_imgs)} gestohlene Selfies + {len(pick_vids)} geheime Aufnahmen!"
+    ]
+    
+    preview_msg = sample(preview_messages, 1)[0]
     await context.bot.send_message(
         chat_id=user_id,
-        text="Vorschau, bei Zugriff Zahlen"
+        text=preview_msg
     )
 
     # Bilder senden
@@ -131,6 +204,23 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
                 await context.bot.send_message(user_id, text=f"⚠️ ffmpeg hat keine Ausgabe erzeugt: {p.name}")
         except Exception as e:
             await context.bot.send_message(user_id, text=f"❌ Videofehler {p.name}: {e}")
+
+    # 💰 Payment Prompt nach Content-Delivery
+    payment_messages = [
+        "🔓 ZAHLE JETZT, um den vollständigen Zugang freizuschalten! Alle Videos & Bilder unzensiert! 💳",
+        "💎 PREMIUM ACCESS: Zahle jetzt und bekomme ALLE Inhalte ohne Zensur! 🔥💰",
+        "⚡ JETZT BEZAHLEN = SOFORTIGER VOLLZUGANG! Keine Wartezeit, alle Medien freigeschaltet! 💸",
+        "🚀 UPGRADE JETZT! Bezahle und erhalte hunderte weitere private Aufnahmen! 💵",
+        "🔥 ZAHLE SOFORT für den VIP-Zugang! Alle geheimen Videos + Bonus Content! 💳✨",
+        "💰 JETZT FREISCHALTEN! Bezahle und sehe ALLES unzensiert - wird dich umhauen! 🔓"
+    ]
+    
+    payment_msg = sample(payment_messages, 1)[0]
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=payment_msg,
+        parse_mode='HTML'
+    )
 
 # ---- Snapchat Check ----
 def check_snapchat_username_exists_and_get_name(username: str):
@@ -437,4 +527,6 @@ def main():
 
 if __name__ == "__main__":
     keep_alive()
+    # Download GitHub media before starting bot
+    download_github_media()
     main()
