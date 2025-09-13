@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 from threading import Thread
@@ -62,7 +61,7 @@ def download_github_media():
     imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
     vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
     
-    if len(imgs) >= 5 and len(vids) >= 5:
+    if len(imgs) >= 3 and len(vids) >= 3:
         print(f"✅ Media bereits vorhanden: {len(imgs)} Bilder, {len(vids)} Videos")
         return True
     
@@ -73,17 +72,20 @@ def download_github_media():
         img_response = requests.get(f"{github_api_base}/Images", timeout=30)
         if img_response.status_code == 200:
             images = img_response.json()
-            print(f"📥 Lade {len(images)} Bilder von GitHub...")
+            print(f"📥 Gefunden: {len(images)} Bilder auf GitHub")
             
-            for img in images[:10]:  # Limit to prevent timeouts
+            for img in images:  # Load all images
                 if img['name'].lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                     img_path = IMAGE_DIR / img['name']
                     if not img_path.exists():
                         try:
+                            print(f"⬇️ Lade {img['name']}...")
                             urllib.request.urlretrieve(img['download_url'], img_path)
                             print(f"✅ {img['name']} heruntergeladen")
                         except Exception as e:
                             print(f"❌ Fehler beim Download {img['name']}: {e}")
+        else:
+            print(f"❌ GitHub API Fehler für Images: {img_response.status_code}")
     except Exception as e:
         print(f"⚠️ Fehler beim Laden der Bilder: {e}")
     
@@ -92,43 +94,29 @@ def download_github_media():
         vid_response = requests.get(f"{github_api_base}/videos", timeout=30)
         if vid_response.status_code == 200:
             videos = vid_response.json()
-            print(f"📥 Lade {len(videos)} Videos von GitHub...")
+            print(f"📥 Gefunden: {len(videos)} Videos auf GitHub")
             
-            for vid in videos[:5]:  # Limit to prevent timeouts
+            for vid in videos:  # Load all videos
                 if vid['name'].lower().endswith(('.mp4', '.mov', '.avi')):
                     vid_path = VIDEO_DIR / vid['name']
                     if not vid_path.exists():
                         try:
+                            print(f"⬇️ Lade {vid['name']}...")
                             urllib.request.urlretrieve(vid['download_url'], vid_path)
                             print(f"✅ {vid['name']} heruntergeladen")
                         except Exception as e:
                             print(f"❌ Fehler beim Download {vid['name']}: {e}")
+        else:
+            print(f"❌ GitHub API Fehler für Videos: {vid_response.status_code}")
     except Exception as e:
         print(f"⚠️ Fehler beim Laden der Videos: {e}")
     
-    print(f"🎯 Media-Download abgeschlossen!")
-    return True
-
-# Create sample content if GitHub download fails
-def create_sample_content():
-    """Creates sample blurred images if no content is available"""
-    print("📸 Erstelle Beispiel-Content...")
+    # Check final count
+    final_imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
+    final_vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
     
-    # Create a simple blurred sample image
-    sample_img = Image.new('RGB', (400, 400), color='red')
-    sample_img = sample_img.filter(ImageFilter.GaussianBlur(28))
-    sample_path = IMAGE_DIR / "sample1.jpg"
-    sample_img.save(sample_path, format="JPEG", quality=90)
-    
-    # Create multiple sample images
-    for i in range(2, 6):
-        colors = ['blue', 'green', 'purple', 'orange']
-        color = colors[i % len(colors)]
-        img = Image.new('RGB', (400, 400), color=color)
-        img = img.filter(ImageFilter.GaussianBlur(28))
-        img.save(IMAGE_DIR / f"sample{i}.jpg", format="JPEG", quality=90)
-    
-    print("✅ Beispiel-Content erstellt")
+    print(f"🎯 Media-Download abgeschlossen! {len(final_imgs)} Bilder, {len(final_vids)} Videos")
+    return len(final_imgs) > 0 or len(final_vids) > 0
 
 # 🎛️ Blur-Einstellungen
 BLUR_IMAGE_RADIUS = 28
@@ -195,9 +183,9 @@ def censor_video(input_path: Path, output_path: Path):
 
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
     """Sendet zensierte Bilder und Videos an den Benutzer"""
-    # Ensure media is available
-    if not download_github_media():
-        create_sample_content()
+    # Ensure fresh download of GitHub media
+    print("🔄 Prüfe GitHub Media...")
+    download_github_media()
     
     # Filter out .gitkeep and other non-media files
     imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
@@ -205,10 +193,10 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
 
     print(f"📊 Verfügbare Medien: {len(imgs)} Bilder, {len(vids)} Videos")
 
-    # If no content available, create sample content
-    if not imgs:
-        create_sample_content()
-        imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
+    # If still no content available, return error
+    if not imgs and not vids:
+        await context.bot.send_message(user_id, text="❌ Keine Medien verfügbar. Bitte versuche es später erneut.")
+        return
 
     # Zufällige Auswahl
     pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
@@ -227,11 +215,12 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
         f"🚨 LEAK ALERT! {len(pick_imgs)} gestohlene Selfies + {len(pick_vids)} geheime Aufnahmen!"
     ]
     
-    preview_msg = sample(preview_messages, 1)[0]
-    await context.bot.send_message(
-        chat_id=user_id,
-        text=preview_msg
-    )
+    if pick_imgs or pick_vids:
+        preview_msg = sample(preview_messages, 1)[0]
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=preview_msg
+        )
 
     success_count = 0
     
@@ -601,5 +590,6 @@ def main():
 if __name__ == "__main__":
     keep_alive()
     # Download GitHub media before starting bot
+    print("🚀 Starte Bot und lade GitHub Media...")
     download_github_media()
     main()
