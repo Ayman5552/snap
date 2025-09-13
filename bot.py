@@ -1,11 +1,14 @@
 import os
+import subprocess
 from threading import Thread
+from pathlib import Path
+from random import sample, randint
 from flask import Flask
-import random
 import asyncio
 import re
 import requests
 from bs4 import BeautifulSoup
+from PIL import Image, ImageFilter
 
 from telegram import (
     Update,
@@ -38,6 +41,18 @@ if not CHANNEL_ID or not ADMIN_CHAT_ID:
 CHANNEL_ID = int(CHANNEL_ID)
 ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
 
+# 🗂️ Ordner für Videos und Bilder einrichten
+BASE = Path(__file__).parent
+IMAGE_DIR = BASE / "images"   # JPG/PNG hinein
+VIDEO_DIR = BASE / "videos"   # MP4 hinein
+TEMP_DIR  = BASE / "temp"     # Output
+for p in (IMAGE_DIR, VIDEO_DIR, TEMP_DIR):
+    p.mkdir(exist_ok=True, parents=True)
+
+# 🎛️ Blur-Einstellungen
+BLUR_IMAGE_RADIUS = 28
+VIDEO_BLUR_SIGMA = 36
+
 # ---- Webserver (Render Alive) ----
 app = Flask('')
 
@@ -46,11 +61,75 @@ def home():
     return "I'm alive"
 
 def keep_alive():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 5000))
     Thread(target=lambda: app.run(host='0.0.0.0', port=port)).start()
 
 # ---- Speicher für einmalige Beweise ----
 user_proof_sent = set()
+user_content_counts = {}  # Store generated counts per user
+
+# ---- Video/Bild Verarbeitung ----
+def censor_image(input_path: Path, output_path: Path):
+    """Zensiert ein Bild mit Gaussian Blur"""
+    im = Image.open(input_path).convert("RGB")
+    im = im.filter(ImageFilter.GaussianBlur(BLUR_IMAGE_RADIUS))
+    im.save(output_path, format="JPEG", quality=90)
+
+def censor_video(input_path: Path, output_path: Path):
+    """Zensiert ein Video mit ffmpeg Gaussian Blur"""
+    vf = f"gblur=sigma={VIDEO_BLUR_SIGMA}"
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", str(input_path),
+        "-vf", vf,
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
+        "-an",
+        str(output_path),
+    ]
+    print("➡️ ffmpeg:", " ".join(cmd))
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print("✅ ffmpeg OK:", output_path)
+        return True
+    except subprocess.CalledProcessError as e:
+        print("❌ ffmpeg Fehler:", e.stderr)
+        return False
+
+async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
+    """Sendet zensierte Bilder und Videos an den Benutzer"""
+    imgs = list(IMAGE_DIR.glob("*.*"))
+    vids = list(VIDEO_DIR.glob("*.mp4"))
+
+    # Zufällige Auswahl
+    pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
+    pick_vids = sample(vids, min(n_vid, len(vids))) if vids else []
+
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=f"🎁 Hier sind deine {len(pick_imgs)} Bilder und {len(pick_vids)} Videos!"
+    )
+
+    # Bilder senden
+    for p in pick_imgs:
+        out = TEMP_DIR / f"c_{p.stem}.jpg"
+        try:
+            censor_image(p, out)
+            with open(out, "rb") as f:
+                await context.bot.send_photo(user_id, photo=f)
+        except Exception as e:
+            await context.bot.send_message(user_id, text=f"❌ Bildfehler {p.name}: {e}")
+
+    # Videos senden
+    for p in pick_vids:
+        out = TEMP_DIR / f"c_{p.stem}.mp4"
+        try:
+            if censor_video(p, out) and out.exists():
+                with open(out, "rb") as f:
+                    await context.bot.send_video(user_id, video=f)
+            else:
+                await context.bot.send_message(user_id, text=f"⚠️ ffmpeg hat keine Ausgabe erzeugt: {p.name}")
+        except Exception as e:
+            await context.bot.send_message(user_id, text=f"❌ Videofehler {p.name}: {e}")
 
 # ---- Snapchat Check ----
 def check_snapchat_username_exists_and_get_name(username: str):
@@ -61,7 +140,7 @@ def check_snapchat_username_exists_and_get_name(username: str):
     try:
         resp = requests.get(url, headers=headers, timeout=10)
         if resp.status_code == 200:
-            if "Sorry, this account doesn’t exist." in resp.text or "Not Found" in resp.text:
+            if "Sorry, this account doesn't exist." in resp.text or "Not Found" in resp.text:
                 return False, None
             soup = BeautifulSoup(resp.text, "html.parser")
             title = soup.find("title")
@@ -150,8 +229,12 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text("📡 Greife auf private Dateien zu...")
     await asyncio.sleep(2)
 
-    bilder = random.randint(16, 20)
-    videos = random.randint(7, 8)
+    # Zufällige Zahlen generieren
+    bilder = randint(16, 20)
+    videos = randint(7, 8)
+    
+    # Zahlen für späteren Abruf speichern
+    user_content_counts[user_id] = {"bilder": bilder, "videos": videos}
 
     msg_text = (
         f"👾 Wir haben den Benutzer ({username}) gefunden, und das Konto ist angreifbar! 👾\n\n"
@@ -159,11 +242,14 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🖼️ {bilder} Bilder als 18+ getaggt\n"
         f"📹 {videos} Videos als 18+ getaggt\n\n"
         f"💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 20 € mit /pay.\n\n"
-        f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ"
-        f"👉 Nach der Zahlung erhältst du hier Alles: Mega.nz"
+        f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
+        f"👉 Nach der Zahlung erhältst du hier Alles: Mega.nz\n"
         f"🎁 Oder verdiene dir einen kostenlosen Hack, indem du andere mit /invite einlädst.\n\n"
     )
     await msg.edit_text(msg_text)
+    
+    # Sofort nach der Nachricht die entsprechende Anzahl Videos und Bilder senden
+    await send_content_to_user(update, context, user_id, bilder, videos)
 
 # ---- PAY ----
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -183,7 +269,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     info_refund = (
         "\n\n⚠️ <b>Wichtig:</b> Bei deiner <u>ersten Zahlung</u> hast du eine "
-        "<b>5 Minuten Testphase</b>. Wenn du in dieser Zeit stornierst, bekommst du <b>15 €</b> zurück.\n\n"
+        "<b>5 Minuten Testphase</b>. Wenn du in dieser Zeit stornierst, bekommst du <b>15 €</b> zurück.\n\n"
         "📌 <b>Verwendungszweck:</b> Gib <u>deinen Telegram-Namen</u> an!"
     )
 
@@ -213,7 +299,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
     elif cmd == "pay":
-        await pay(update, context)
+        keyboard = [
+            [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
+            [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
+            [InlineKeyboardButton("🪙 Kryptowährungen", callback_data="pay_crypto")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
         return
     else:
         await query.edit_message_text("Ungültige Auswahl.")
@@ -226,19 +318,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---- PHOTO (Beweis) ----
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
+    user_id = from_user.id
 
-    if from_user.id in user_proof_sent:
+    if user_id in user_proof_sent:
         await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
         return
 
-    user_proof_sent.add(from_user.id)
+    user_proof_sent.add(user_id)
 
     photo = update.message.photo[-1]
     caption = update.message.caption or ""
     forward_text = (
-        f"📸 Neuer Beweis von @{from_user.username or from_user.first_name} (ID: {from_user.id})\n\n"
+        f"📸 Neuer Beweis von @{from_user.username or from_user.first_name} (ID: {user_id})\n\n"
         f"Bildunterschrift:\n{caption}"
     )
+    
     try:
         await context.bot.send_photo(
             chat_id=ADMIN_CHAT_ID,
@@ -247,6 +341,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.HTML,
         )
         await update.message.reply_text("✅ Dein Beweis wurde erfolgreich gesendet!")
+        
+        # Nach erfolgreichem Beweis automatisch Content senden
+        if user_id in user_content_counts:
+            counts = user_content_counts[user_id]
+            await send_content_to_user(update, context, user_id, counts["bilder"], counts["videos"])
+            del user_content_counts[user_id]  # Cleanup nach dem Senden
+            
     except Exception as e:
         print("Fehler beim Senden des Beweisfotos:", e)
         await update.message.reply_text("❌ Fehler beim Senden des Beweisfotos.")
@@ -256,17 +357,40 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     paysafe_pattern = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{4}$")
     from_user = update.message.from_user
+    user_id = from_user.id
 
     if paysafe_pattern.match(text):
-        if from_user.id in user_proof_sent:
+        if user_id in user_proof_sent:
             await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
             return
 
-        user_proof_sent.add(from_user.id)
+        user_proof_sent.add(user_id)
 
         msg = f"🎫 Neuer Paysafe-Code von @{from_user.username or from_user.first_name}:\n<code>{text}</code>"
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=msg, parse_mode=ParseMode.HTML)
         await update.message.reply_text("✅ Dein Paysafe-Code wurde erfolgreich gesendet!")
+        
+        # Nach erfolgreichem Beweis automatisch Content senden
+        if user_id in user_content_counts:
+            counts = user_content_counts[user_id]
+            await send_content_to_user(update, context, user_id, counts["bilder"], counts["videos"])
+            del user_content_counts[user_id]  # Cleanup nach dem Senden
+
+# ---- ADMIN: /sendcontent - Manuelles Senden für Tests ----
+async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_CHAT_ID:
+        return
+    
+    try:
+        args = context.args or []
+        n_img = int(args[0]) if len(args) > 0 else 1
+        n_vid = int(args[1]) if len(args) > 1 else 1
+        user_id = update.effective_user.id
+        
+        await send_content_to_user(update, context, user_id, n_img, n_vid)
+        
+    except Exception as e:
+        await update.message.reply_text(f"❌ Fehler: {e}\nNutzung: /sendcontent <bilder> <videos>")
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -292,6 +416,7 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = ApplicationBuilder().token(TOKEN).build()
 
+    # Command Handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
@@ -299,7 +424,9 @@ def main():
     application.add_handler(CommandHandler("redeem", redeem))
     application.add_handler(CommandHandler("faq", faq))
     application.add_handler(CommandHandler("listusers", list_users))
+    application.add_handler(CommandHandler("sendcontent", send_content))  # Admin test command
 
+    # Callback and Message Handlers
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
