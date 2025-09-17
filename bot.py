@@ -214,11 +214,10 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
 
     preview_msg = sample(preview_messages, 1)[0]
     # Simple preview message
-    await context.bot.send_message(
-        chat_id=user_id,
-        text=preview_msg,
-        text="Vorschau von dem Privat Bereich, für Alle Videos, Bilder bitte /pay ."
-    )
+await context.bot.send_message(
+    chat_id=user_id,
+    text=f"{preview_msg}\n\nVorschau vom Privat-Bereich. Für alle Videos und Bilder bitte /pay verwenden."
+)
 
     success_count = 0
 
