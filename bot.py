@@ -272,114 +272,18 @@ def check_snapchat_username_exists_and_get_name(username: str):
     return exists, name
 
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
-    """Sendet zensierte Bilder und Videos an den Benutzer"""
-    # Ensure GitHub media is downloaded
-    if not download_github_media():
-        await context.bot.send_message(user_id, text="⚠️ Fehler beim Laden der GitHub Medien")
-        return
-
-    # Filter out .gitkeep and other non-media files
-    imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
-    vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
-
-    print(f"📊 Verfügbare GitHub Medien: {len(imgs)} Bilder, {len(vids)} Videos")
-
-    # If no GitHub content available, inform user
-    if not imgs and not vids:
-        await context.bot.send_message(user_id, text="⚠️ Keine GitHub Medien verfügbar")
-        return
-
-    # Zufällige Auswahl aus verfügbaren GitHub Medien
-    pick_imgs = sample(imgs, min(n_img, len(imgs))) if imgs else []
-    pick_vids = sample(vids, min(n_vid, len(vids))) if vids else []
-    
-    username = "Unknown"  # Fallback if username not available
-    
-    # Spannende zufällige Vorschau-Nachrichten
-    preview_messages = [
-        f"🔥 EXCLUSIVE LEAK! {len(pick_imgs)} geheime Bilder + {len(pick_vids)} heiße Videos von {username} gefunden!",
-        f"💯 JACKPOT! {len(pick_imgs)} private Pics + {len(pick_vids)} intime Videos direkt aus dem Handy!",
-        f"⚡ BOMBE! {len(pick_imgs)} Selfies + {len(pick_vids)} Stories die niemand sehen sollte!",
-        f"🎯 TREFFER! {len(pick_imgs)} versteckte Fotos + {len(pick_vids)} geheime Clips entschlüsselt!",
-        f"🔞 WARNING! {len(pick_imgs)} heiße Bilder + {len(pick_vids)} intime Videos - zu krass für Snapchat!",
-        f"💎 PREMIUM CONTENT! {len(pick_imgs)} exclusive Pics + {len(pick_vids)} private Videos nur für dich!",
-        f"🚨 LEAK ALERT! {len(pick_imgs)} gestohlene Selfies + {len(pick_vids)} geheime Aufnahmen!"
-    ]
-    # Limit to maximum 3 images and 3 videos, ensure different selection each time
-    max_imgs = min(3, len(imgs))
-    max_vids = min(3, len(vids))
-    
-    pick_imgs = sample(imgs, max_imgs) if imgs else []
-    pick_vids = sample(vids, max_vids) if vids else []
-
-    preview_msg = sample(preview_messages, 1)[0]
-    # Fixed indentation issue
+    """Disabled: This function no longer sends preview images/videos to users.
+    It only informs the user that media delivery is gated behind payment/proof.
+    """
+    # Informational message only - no previews or media are sent.
     await context.bot.send_message(
         chat_id=user_id,
-        text=f"{preview_msg}\n\nVorschau vom Privat-Bereich. Für alle Videos und Bilder bitte /pay verwenden."
+        text=(
+            "🔒 Medien-Preview ist deaktiviert.\n\n"
+            "Um Zugriff auf alle (legitimen) Inhalte zu erhalten, nutze bitte die offiziellen Zahlungswege (/pay) oder kontaktiere den Admin."
+        )
     )
-
-    success_count = 0
-
-    # Bilder senden
-    for i, p in enumerate(pick_imgs):
-        try:
-            out = TEMP_DIR / f"c_{p.stem}_{i}.jpg"
-            if censor_image(p, out) and out.exists():
-                with open(out, "rb") as f:
-                    await context.bot.send_photo(user_id, photo=f)
-                    success_count += 1
-                # Clean up temp file
-                try:
-                    out.unlink()
-                except:
-                    pass
-            else:
-                print(f"⚠️ Konnte Bild nicht verarbeiten: {p.name}")
-        except Exception as e:
-            print(f"❌ Fehler beim Senden von Bild {p.name}: {e}")
-            await context.bot.send_message(user_id, text=f"⚠️ Ein Bild konnte nicht geladen werden")
-
-    # Videos senden (nur wenn ffmpeg verfügbar)
-    if check_ffmpeg():
-        for i, p in enumerate(pick_vids):
-            try:
-                out = TEMP_DIR / f"c_{p.stem}_{i}.mp4"
-                if censor_video(p, out) and out.exists():
-                    with open(out, "rb") as f:
-                        await context.bot.send_video(user_id, video=f)
-                        success_count += 1
-                    # Clean up temp file
-                    try:
-                        out.unlink()
-                    except:
-                        pass
-                else:
-                    print(f"⚠️ Konnte Video nicht verarbeiten: {p.name}")
-            except Exception as e:
-                print(f"❌ Fehler beim Senden von Video {p.name}: {e}")
-                await context.bot.send_message(user_id, text=f"⚠️ Ein Video konnte nicht geladen werden")
-    else:
-        await context.bot.send_message(user_id, text="⚠️ Video-Verarbeitung momentan nicht verfügbar")
-
-    print(f"✅ {success_count} GitHub Medien erfolgreich gesendet")
-
-    # 💰 Payment Prompt nach Content-Delivery
-    payment_messages = [
-        "🔓 ZAHLE JETZT, um den vollständigen Zugang freizuschalten! Alle Videos & Bilder unzensiert! 💳",
-        "💎 PREMIUM ACCESS: Zahle jetzt und bekomme ALLE Inhalte ohne Zensur! 🔥💰",
-        "⚡ JETZT BEZAHLEN = SOFORTIGER VOLLZUGANG! Keine Wartezeit, alle Medien freigeschaltet! 💸",
-        "🚀 UPGRADE JETZT! Bezahle und erhalte hunderte weitere private Aufnahmen! 💵",
-        "🔥 ZAHLE SOFORT für den VIP-Zugang! Alle geheimen Videos + Bonus Content! 💳✨",
-        "💰 JETZT FREISCHALTEN! Bezahle und sehe ALLES unzensiert - wird dich umhauen! 🔓"
-    ]
-
-    payment_msg = sample(payment_messages, 1)[0]
-    await context.bot.send_message(
-        chat_id=user_id,
-        text=payment_msg,
-        parse_mode='HTML'
-    )
+    return
 
 # ---- START ----
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -500,7 +404,10 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await msg.edit_text(msg_text)
 
-    # Send Bitmoji and profile photo if available
+    # Do NOT send preview images or videos automatically anymore.
+    # The bot will inform users to use /pay to get access or contact the admin.
+
+    # Send Bitmoji and profile photo if available (optional - these are single images)
     if bitmoji_downloaded:
         try:
             bitmoji_path = PROFILE_DIR / f"bitmoji_{username}.jpg"
@@ -516,9 +423,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_photo(user_id, photo=f, caption=f"📸 {name}'s Profilbild")
         except Exception as e:
             print(f"❌ Fehler beim Senden von Profilbild: {e}")
-
-    # Sofort nach der Nachricht die entsprechende Anzahl Videos und Bilder von GitHub senden
-    await send_content_to_user(update, context, user_id, bilder, videos)
 
 # ---- PAY ----
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -611,11 +515,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await update.message.reply_text("✅ Dein Beweis wurde erfolgreich gesendet!")
 
-        # Nach erfolgreichem Beweis automatisch GitHub Content senden
-        if user_id in user_content_counts:
-            counts = user_content_counts[user_id]
-            await send_content_to_user(update, context, user_id, counts["bilder"], counts["videos"])
-            del user_content_counts[user_id]  # Cleanup nach dem Senden
+        # Hinweis: Content wird nicht automatisch versendet. Admin prüft Beweis und gibt manuell frei.
 
     except Exception as e:
         print("Fehler beim Senden des Beweisfotos:", e)
@@ -638,27 +538,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=msg, parse_mode=ParseMode.HTML)
         await update.message.reply_text("✅ Dein Paysafe-Code wurde erfolgreich gesendet!")
 
-        # Nach erfolgreichem Beweis automatisch GitHub Content senden
-        if user_id in user_content_counts:
-            counts = user_content_counts[user_id]
-            await send_content_to_user(update, context, user_id, counts["bilder"], counts["videos"])
-            del user_content_counts[user_id]  # Cleanup nach dem Senden
+        # Hinweis: Content wird nicht automatisch versendet. Admin prüft Beweis und gibt manuell frei.
 
 # ---- ADMIN: /sendcontent - Manuelles Senden für Tests ----
 async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_CHAT_ID:
         return
 
-    try:
-        args = context.args or []
-        n_img = int(args[0]) if len(args) > 0 else 1
-        n_vid = int(args[1]) if len(args) > 1 else 1
-        user_id = update.effective_user.id
-
-        await send_content_to_user(update, context, user_id, n_img, n_vid)
-
-    except Exception as e:
-        await update.message.reply_text(f"❌ Fehler: {e}\nNutzung: /sendcontent <bilder> <videos>")
+    # Für Sicherheit: Admin muss prüfen; automatisches Versenden ist deaktiviert.
+    await update.message.reply_text("Hinweis: Automatisches Versenden von Preview-Medien ist deaktiviert. Verwende diese Funktion nicht, um private Inhalte zu verbreiten.")
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
