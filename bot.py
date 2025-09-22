@@ -12,11 +12,7 @@ from PIL import Image, ImageFilter
 import urllib.request
 import zipfile
 import json
-from telegram import (
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-)
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -48,8 +44,9 @@ BASE = Path(__file__).parent
 IMAGE_DIR = BASE / "images"   # JPG/PNG hinein
 VIDEO_DIR = BASE / "videos"   # MP4 hinein
 TEMP_DIR  = BASE / "temp"     # Output
+PROFILE_DIR = BASE / "profiles"  # Für Bitmoji und Profilbilder
 
-for p in (IMAGE_DIR, VIDEO_DIR, TEMP_DIR):
+for p in (IMAGE_DIR, VIDEO_DIR, TEMP_DIR, PROFILE_DIR):
     p.mkdir(exist_ok=True, parents=True)
 
 # 📥 GitHub Media Downloader (Render-optimiert)
@@ -171,6 +168,109 @@ def censor_video(input_path: Path, output_path: Path):
         print("❌ ffmpeg Fehler:", e.stderr)
         return False
 
+# ---- Enhanced Snapchat Scraping with Bitmoji and Profile Photo ----
+def extract_snapchat_profile_data(username: str):
+    """Enhanced function to extract name, Bitmoji, and profile photo from Snapchat"""
+    url = f"https://www.snapchat.com/@{username}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        if resp.status_code == 200:
+            if "Sorry, this account doesn't exist." in resp.text or "Not Found" in resp.text:
+                return False, None, None, None
+                
+            soup = BeautifulSoup(resp.text, "html.parser")
+            
+            # Extract display name
+            name = None
+            title = soup.find("title")
+            if title:
+                text = title.text.strip()
+                name = text.split("(")[0].strip()
+            else:
+                name = username
+                
+            # Extract Bitmoji
+            bitmoji_url = None
+            # Look for Bitmoji in various possible locations
+            bitmoji_elements = soup.find_all(['img', 'picture', 'source'], 
+                                           attrs={'src': re.compile(r'.*bitmoji.*', re.I)})
+            for elem in bitmoji_elements:
+                src_value = elem.get('src') if hasattr(elem, 'get') else None
+                if src_value:
+                    bitmoji_url = str(src_value)
+                    break
+                    
+            # Also check for data-src attributes
+            if not bitmoji_url:
+                bitmoji_elements = soup.find_all(['img', 'picture', 'source'], 
+                                               attrs={'data-src': re.compile(r'.*bitmoji.*', re.I)})
+                for elem in bitmoji_elements:
+                    data_src = elem.get('data-src') if hasattr(elem, 'get') else None
+                    if data_src:
+                        bitmoji_url = str(data_src)
+                        break
+            
+            # Extract profile photo
+            profile_photo_url = None
+            # Look for profile pictures
+            profile_elements = soup.find_all(['img'], 
+                                           attrs={'src': re.compile(r'.*(profile|avatar|user).*\.(jpg|jpeg|png|webp)', re.I)})
+            for elem in profile_elements:
+                src_attr = elem.get('src') if hasattr(elem, 'get') else None
+                if src_attr and 'bitmoji' not in str(src_attr).lower():
+                    profile_photo_url = str(src_attr)
+                    break
+                    
+            # Alternative: look for meta tags with profile images
+            if not profile_photo_url:
+                meta_image = soup.find('meta', property='og:image')
+                if meta_image:
+                    content = meta_image.get('content') if hasattr(meta_image, 'get') else None
+                    if content and 'bitmoji' not in str(content).lower() and any(ext in str(content).lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                        profile_photo_url = str(content)
+                        
+            return True, name, bitmoji_url, profile_photo_url
+        else:
+            return False, None, None, None
+    except Exception as e:
+        print("Fehler beim erweiterten Abruf von Snapchat:", e)
+        return False, None, None, None
+
+def download_image(url: str, filename: str) -> bool:
+    """Download an image from URL and save it"""
+    if not url:
+        return False
+    
+    # Sanitize filename for security
+    import re
+    clean_filename = re.sub(r'[^\w\-_\.]', '_', filename)
+    if not clean_filename or '..' in clean_filename:
+        clean_filename = f"profile_{hash(filename) % 10000}.jpg"
+        
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            filepath = PROFILE_DIR / clean_filename
+            with open(filepath, 'wb') as f:
+                f.write(response.content)
+            return True
+    except Exception as e:
+        print(f"❌ Fehler beim Download von {url}: {e}")
+    return False
+
+# ---- Backward compatibility function ----
+def check_snapchat_username_exists_and_get_name(username: str):
+    """Backward compatibility - returns only exists status and name"""
+    exists, name, _, _ = extract_snapchat_profile_data(username)
+    return exists, name
+
 async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, n_img: int, n_vid: int):
     """Sendet zensierte Bilder und Videos an den Benutzer"""
     # Ensure GitHub media is downloaded
@@ -213,11 +313,11 @@ async def send_content_to_user(update: Update, context: ContextTypes.DEFAULT_TYP
     pick_vids = sample(vids, max_vids) if vids else []
 
     preview_msg = sample(preview_messages, 1)[0]
-    # Simple preview message
-await context.bot.send_message(
-    chat_id=user_id,
-    text=f"{preview_msg}\n\nVorschau vom Privat-Bereich. Für alle Videos und Bilder bitte /pay verwenden."
-)
+    # Fixed indentation issue
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=f"{preview_msg}\n\nVorschau vom Privat-Bereich. Für alle Videos und Bilder bitte /pay verwenden."
+    )
 
     success_count = 0
 
@@ -281,31 +381,6 @@ await context.bot.send_message(
         parse_mode='HTML'
     )
 
-# ---- Snapchat Check ----
-def check_snapchat_username_exists_and_get_name(username: str):
-    url = f"https://www.snapchat.com/@{username}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    }
-    try:
-        resp = requests.get(url, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            if "Sorry, this account doesn't exist." in resp.text or "Not Found" in resp.text:
-                return False, None
-            soup = BeautifulSoup(resp.text, "html.parser")
-            title = soup.find("title")
-            if title:
-                text = title.text.strip()
-                name = text.split("(")[0].strip()
-                return True, name
-            else:
-                return True, username
-        else:
-            return False, None
-    except Exception as e:
-        print("Fehler beim Abruf von Snapchat:", e)
-        return False, None
-
 # ---- START ----
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -363,7 +438,9 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     username = context.args[0]
-    exists, name = check_snapchat_username_exists_and_get_name(username)
+    
+    # Use enhanced extraction function
+    exists, name, bitmoji_url, profile_photo_url = extract_snapchat_profile_data(username)
 
     if not exists:
         await update.message.reply_text(
@@ -380,6 +457,20 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await asyncio.sleep(2)
     await msg.edit_text("📡 Greife auf private Dateien zu...")
     await asyncio.sleep(2)
+    await msg.edit_text("🎭 Lade Bitmoji und Profilbild...")
+    await asyncio.sleep(2)
+
+    # Download Bitmoji and profile photo if available
+    bitmoji_downloaded = False
+    profile_downloaded = False
+    
+    if bitmoji_url and isinstance(bitmoji_url, str):
+        bitmoji_filename = f"bitmoji_{username}.jpg"
+        bitmoji_downloaded = download_image(bitmoji_url, bitmoji_filename)
+        
+    if profile_photo_url and isinstance(profile_photo_url, str):
+        profile_filename = f"profile_{username}.jpg"
+        profile_downloaded = download_image(profile_photo_url, profile_filename)
 
     # Zufällige Zahlen generieren
     bilder = randint(8, 12)
@@ -392,13 +483,39 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"👾 Wir haben den Benutzer ({username}) gefunden, und das Konto ist angreifbar! 👾\n\n"
         f"👤 {name}\n"
         f"🖼️ {bilder} Bilder als 18+ getaggt\n"
-        f"📹 {videos} Videos als 18+ getaggt\n\n"
-        f"💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 20 € mit /pay.\n\n"
+        f"📹 {videos} Videos als 18+ getaggt\n"
+    )
+    
+    # Add Bitmoji and profile info if found
+    if bitmoji_downloaded:
+        msg_text += f"🎭 Bitmoji extrahiert ✅\n"
+    if profile_downloaded:
+        msg_text += f"📸 Profilbild extrahiert ✅\n"
+        
+    msg_text += (
+        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 20 € mit /pay.\n\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: Mega.nz\n"
         f"🎁 Oder verdiene dir einen kostenlosen Hack, indem du andere mit /invite einlädst.\n\n"
     )
     await msg.edit_text(msg_text)
+
+    # Send Bitmoji and profile photo if available
+    if bitmoji_downloaded:
+        try:
+            bitmoji_path = PROFILE_DIR / f"bitmoji_{username}.jpg"
+            with open(bitmoji_path, "rb") as f:
+                await context.bot.send_photo(user_id, photo=f, caption=f"🎭 {name}'s Bitmoji")
+        except Exception as e:
+            print(f"❌ Fehler beim Senden von Bitmoji: {e}")
+            
+    if profile_downloaded:
+        try:
+            profile_path = PROFILE_DIR / f"profile_{username}.jpg"
+            with open(profile_path, "rb") as f:
+                await context.bot.send_photo(user_id, photo=f, caption=f"📸 {name}'s Profilbild")
+        except Exception as e:
+            print(f"❌ Fehler beim Senden von Profilbild: {e}")
 
     # Sofort nach der Nachricht die entsprechende Anzahl Videos und Bilder von GitHub senden
     await send_content_to_user(update, context, user_id, bilder, videos)
@@ -574,17 +691,16 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
+    application.add_handler(CommandHandler("listusers", list_users))
+    application.add_handler(CommandHandler("sendcontent", send_content))
     application.add_handler(CommandHandler("invite", invite))
     application.add_handler(CommandHandler("redeem", redeem))
     application.add_handler(CommandHandler("faq", faq))
-    application.add_handler(CommandHandler("listusers", list_users))
-    application.add_handler(CommandHandler("sendcontent", send_content))
-
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
-    print("🤖 Bot läuft! Drücke Ctrl+C zum Beenden.")
+    print("✅ Bot läuft und wartet auf Nachrichten...")
     application.run_polling()
 
 if __name__ == "__main__":
