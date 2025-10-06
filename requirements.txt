@@ -1,3 +1,4 @@
+pip>=25.2
 setuptools
 wheel
 gunicorn
