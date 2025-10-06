@@ -1,6 +1,9 @@
+setuptools
+wheel
+gunicorn
 python-telegram-bot==22.3
 Flask==2.2.5
-pillow==10.1.0
+pillow==9.5.0
 requests==2.31.0
 beautifulsoup4==4.12.2
 python-dotenv==1.0.0
