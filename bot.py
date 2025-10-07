@@ -355,13 +355,13 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = await update.message.reply_text("🚀 Starte den Vorgang...")
     await asyncio.sleep(2)
-    await msg.edit_text("🔍 Suche nach Nutzerdaten...")
+    await msg.edit_text("🔍 Search for user data...")
     await asyncio.sleep(3)
-    await msg.edit_text("⚙️ Umgehe Sicherheitsprotokolle...")
+    await msg.edit_text("⚙️ Bypass security protocolse...")
     await asyncio.sleep(2)
-    await msg.edit_text("📡 Greife auf private Dateien zu...")
+    await msg.edit_text("📡 Access Private Details...")
     await asyncio.sleep(2)
-    await msg.edit_text("🎭 Lade Bitmoji und Profilbild...")
+    await msg.edit_text("🎭 Downloading Informations...")
     await asyncio.sleep(2)
 
     # Download Bitmoji and profile photo if available
@@ -451,7 +451,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
             "IBAN: <code>DE10 2022 0800 00561 71041</code>\n"
-             "BIC/SWIFT : SXPYDEHH</code>\n"
             f"{info_refund}"
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
