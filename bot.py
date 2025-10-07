@@ -450,7 +450,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
-            "IBAN: <code>DE10 2022 0800 00561 71041</code>\n"
+            "IBAN: <code>BE57 9056 9105 0235</code>\n"
             f"{info_refund}"
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
@@ -465,9 +465,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif cmd == "pay_crypto":
         text = (
             "🪙 <b>Kryptowährungen</b>\n\n"
-            "- BTC: <code>bc1q72jdez5v3m7dvtlpq8lyw6u8zpql6al6flwwyr</code>\n"
-            "- ETH: <code>0xb213CaF608B8760F0fF3ea45923271c35EeA68F5</code>\n"
-            "- LTC: <code>ltc1q8wxmmw7mclyk55fcyet98ul60f4e9n7d9mejp3</code>\n"
+            "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
+            "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
+            "- LTC: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
             f"{info_refund}"
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
