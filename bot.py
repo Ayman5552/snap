@@ -452,6 +452,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Empfänger: Euro Hunter\n"
             "IBAN: <code>BE57 9056 9105 0235</code>\n"
             f"{info_refund}"
+            "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
     elif cmd == "pay_paysafe":
