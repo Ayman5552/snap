@@ -296,7 +296,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 https://t.me/+1FjZ-IVIzQ0wMDRl\n\n"
+        "👉 https://t.me/+s4ik5bsPgOE3YWIy\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername\n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
@@ -329,7 +329,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
                 "🌟 Bitte abonniere zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉 https://t.me/+1FjZ-IVIzQ0wMDRl"
+                "👉 https://t.me/+s4ik5bsPgOE3YWIy"
             )
             return
     except Exception as e:
@@ -529,6 +529,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
 
+    
     if paysafe_pattern.match(text):
         if user_id in user_proof_sent:
             await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
@@ -551,7 +552,7 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🎁 Lade Freunde ein und erhalte einen kostenlosen Hack!\n\n🔗 https://t.me/+1FjZ-IVIzQ0wMDRl"
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗 https://t.me/+s4ik5bsPgOE3YWIy"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
