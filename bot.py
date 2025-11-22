@@ -450,7 +450,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
-           "IBAN: <code>FR76 1774 8019 8413 7976 5166 030</code>\n"
+           "IBAN: <code>IE92 PPSE 9903 8041 1267 01</code>\n"
             f"{info_refund}"
             "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
