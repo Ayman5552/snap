@@ -441,9 +441,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmd = query.data
 
     info_refund = (
-        "\n\n⚠️ <b>Wichtig:</b> Bei deiner <u>ersten Zahlung</u> hast du eine "
-        "<b>5 Minuten Testphase</b>. Wenn du in dieser Zeit stornierst, bekommst du <b>15 €</b> zurück.\n\n"
-        "📌 <b>Verwendungszweck:</b> Gib <u>deinen Telegram-Namen</u> an!"
+        "\n\n⚠️ <b>Wichtig:</b> Bei deine  <u>ersten Hack</u> hast du eine "
+        "<b>5 Minuten Refund-Zeit</b>. Wenn du in dieser Zeit Stornierst, bekommst du <b>15 €</b> zurück.\n\n"
+        "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
     )
 
     if cmd == "pay_bank":
@@ -453,8 +453,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
            "IBAN: <code>FR761 7748 0198 4666 6666 6663 93</code>\n"
             f"{info_refund}"
             "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
-            "\n\nVerwendungszweck: Dein Telegram Username."
-            "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
+            "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
         )
     elif cmd == "pay_paysafe":
         text = (
