@@ -450,9 +450,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
-           "IBAN: <code>IE92 PPSE 9903 8041 1267 01</code>\n"
+           "IBAN: <code>FR761 7748 0198 4666 6666 6663 93</code>\n"
             f"{info_refund}"
             "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
+            "\n\nVerwendungszweck: Dein Telegram Username."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
     elif cmd == "pay_paysafe":
