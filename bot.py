@@ -515,7 +515,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             caption=forward_text,
             parse_mode=ParseMode.HTML,
         )
-        await update.message.reply_text("✅ Dein Beweis wurde erfolgreich gesendet, wenn es Länger als 5min Dauert, kontaktiere @EmilyHxnt")
+        await update.message.reply_text("✅ Dein Beweis wurde erfolgreich gesendet, wenn es Länger als 5min Dauert, kontaktiere @SnapHunterrr")
 
         # Hinweis: Content wird nicht automatisch versendet. Admin prüft Beweis und gibt manuell frei.
 
