@@ -452,7 +452,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Empfänger: Euro Hunter\n"
            "IBAN: <code>LT62 3130 0101 0634 0669.</code>\n"
             f"{info_refund}"
-            "BIC: BZENLT22 \n"
+            "\n\nBei Zahlung über Amazon, sende den Code an @OpaHunter ."
             "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
             "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
         )
