@@ -299,7 +299,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👉 t.me/+BocqWjWY41lmMDk5\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername von dem Account. \n\n"
-        "/Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
+        "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
     )
     await update.message.reply_text(text)
