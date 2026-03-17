@@ -298,7 +298,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
         "👉 t.me/+BocqWjWY41lmMDk5\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
-        "/hack Benutzername\n\n"
+        "/hack Benutzername von dem Account. \n\n"
+        "/Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
     )
     await update.message.reply_text(text)
@@ -354,15 +355,15 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     msg = await update.message.reply_text("🚀 Starte den Vorgang...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     await msg.edit_text("🔍 Search for user data...")
     await asyncio.sleep(3)
     await msg.edit_text("⚙️ Bypass security protocolse...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     await msg.edit_text("📡 Access Private Details...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     await msg.edit_text("🎭 Downloading Informations...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
 
     # Download Bitmoji and profile photo if available
     bitmoji_downloaded = False
