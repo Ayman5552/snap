@@ -296,7 +296,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 t.me/+BocqWjWY41lmMDk5\n\n"
+        "👉 t.me/+nMHJ1iyB1d0xZmUxqWjWY41lmMDk5\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername von dem Account. \n\n"
         "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
@@ -330,7 +330,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
                 "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉t.me/+BocqWjWY41lmMDk5"
+                "👉t.me/+nMHJ1iyB1d0xZmUxqWjWY41lmMDk5"
             )
             return
     except Exception as e:
