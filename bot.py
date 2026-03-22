@@ -430,7 +430,7 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
         [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Kryptowährungen", callback_data="pay_crypto")],
+        [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
@@ -467,18 +467,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif cmd == "pay_crypto":
         text = (
-            "🪙 <b>Kryptowährungen</b>\n\n"
+            "🪙 <b>Crypto-Adressen :</b>\n\n"
+            "-Tippen, zum Kopieren.</code>\n"
             "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
             "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
-            "- LTC: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
+            "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
             f"{info_refund}"
+             "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
     elif cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-            [InlineKeyboardButton("🪙 Kryptowährungen", callback_data="pay_crypto")],
+            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
