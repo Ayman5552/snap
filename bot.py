@@ -451,12 +451,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
-           "IBAN: <code>LT62 3130 0101 0634 0669.</code>\n"
+            "IBAN: <code>LT62 3130 0101 0634 0669.</code>\n"
             f"{info_refund}"
             "\n\nBei Zahlung über Amazon, sende den Code an @OpaHunter ."
             "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
             "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
         )
+
     elif cmd == "pay_paysafe":
         text = (
             "💳 <b>PaySafeCard</b>\n\n"
@@ -465,6 +466,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{info_refund}"
             "\n\nDer Code wird überprüft und weitergeleitet."
         )
+
     elif cmd == "pay_crypto":
         text = (
             "🪙 <b>Crypto-Adressen :</b>\n\n"
@@ -473,14 +475,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
             "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
             f"{info_refund}"
-             "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
+            "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
+
     elif cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
             [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+        return
+
+    # 🔥 DAS WAR DEIN FEHLER → diese Zeile hat gefehlt
+    await query.message.reply_text(text, parse_mode="HTML")
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
