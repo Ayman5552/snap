@@ -580,3 +580,22 @@ def main():
     keep_alive()
     app_builder = ApplicationBuilder().token(TOKEN)
     application = app_builder.build()
+
+    # Handler registrieren
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("hack", hack))
+    application.add_handler(CommandHandler("pay", pay))
+    application.add_handler(CommandHandler("listusers", list_users))
+    application.add_handler(CommandHandler("sendcontent", send_content))
+    application.add_handler(CommandHandler("invite", invite))
+    application.add_handler(CommandHandler("redeem", redeem))
+    application.add_handler(CommandHandler("faq", faq))
+    application.add_handler(CallbackQueryHandler(button_handler))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
+    print("✅ Bot läuft und wartet auf Nachrichten...")
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()
