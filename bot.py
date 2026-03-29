@@ -426,23 +426,13 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"❌ Fehler beim Senden von Profilbild: {e}")
 
 # ---- PAY ----
-async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
-        [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
-
-# ---- BUTTONS ----
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     cmd = query.data
 
     info_refund = (
-        "\n\n⚠️ <b>Wichtig:</b> Bei deine  <u>ersten Hack</u> hast du eine "
+        "\n\n⚠️ <b>Wichtig:</b> Bei deine <u>ersten Hack</u> hast du eine "
         "<b>5 Minuten Refund-Zeit</b>. Wenn du in dieser Zeit Stornierst, bekommst du <b>15 €</b> zurück.\n\n"
         "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
     )
@@ -451,10 +441,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
-            "IBAN: <code>LT62 3130 0101 0634 0669.</code>\n"
+            "IBAN: <code>LT62 3130 0101 0634 0669</code>\n"
             f"{info_refund}"
-            "\n\nBei Zahlung über Amazon, sende den Code an @OpaHunter ."
-            "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
+            "\n\nBei Zahlung über Amazon, sende den Code an @OpaHunter."
+            "\n\nTippe auf <b>Weiter</b>, auch wenn Fehler bei Empfänger Überprüfung kommt."
             "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
         )
 
@@ -469,17 +459,35 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif cmd == "pay_crypto":
         text = (
-            "🪙 <b>Crypto-Adressen :</b>\n\n"
-            "-Tippen, zum Kopieren.</code>\n"
+            "🪙 <b>Crypto-Adressen:</b>\n\n"
+            "<i>Tippen zum Kopieren</i>\n"
             "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
             "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
             "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
             f"{info_refund}"
-            "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
+            "\n\nFalls du kein Crypto besitzt, kannst du es gebührenfrei bei cryptovoucher.io kaufen."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
 
     elif cmd == "pay":
+        keyboard = [
+            [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
+            [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
+            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+        return
+
+    else:
+        await query.edit_message_text("Ungültige Auswahl.")
+        return
+
+    # 👇 EINZIGE Ausgabe (sauber)
+    keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=reply_markup)
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
