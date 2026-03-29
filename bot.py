@@ -296,7 +296,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 t.me/+nMHJ1iyB1d0xZmUxqWjWY41lmMDk5\n\n"
+        "👉 https://t.me/+QT6ghV4v5rZjNmQx\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername von dem Account. \n\n"
         "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
