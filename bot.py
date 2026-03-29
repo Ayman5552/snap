@@ -329,8 +329,8 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
-                "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉t.me/+nMHJ1iyB1d0xZmUxqWjWY41lmMDk5"
+                "🌟 Bitte Betrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
+                "👉https://t.me/+ivL-4D0RDpUyMmYx"
             )
             return
     except Exception as e:
