@@ -478,38 +478,68 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
         return
+# ---- BUTTON_HANDLER KORRIGIERT ----
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    cmd = query.data
 
-    else:
-        await query.edit_message_text("Ungültige Auswahl.")
-        return
+    info_refund = (
+        "\n\n⚠️ <b>Wichtig:</b> Bei deinem <u>ersten Hack</u> hast du eine "
+        "<b>5 Minuten Refund-Zeit</b>. Wenn du in dieser Zeit stornierst, bekommst du <b>15 €</b> zurück.\n\n"
+        "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
+    )
 
-    # 👇 EINZIGE Ausgabe (sauber)
-    keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await query.edit_message_text(text, parse_mode="HTML", reply_markup=reply_markup)
+    # 1. Spezialfall: Hauptmenü aufrufen
+    if cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
             [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
-        return
-
-    # 🔥 DAS WAR DEIN FEHLER → diese Zeile hat gefehlt
-    await query.message.reply_text(text, parse_mode="HTML")
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
         return
+
+    # 2. Texte für die einzelnen Methoden zuweisen
+    if cmd == "pay_bank":
+        text = (
+            "🏦 <b>Banküberweisung</b>\n\n"
+            "Empfänger: Euro Hunter\n"
+            "IBAN: <code>LT62 3130 0101 0634 0669</code>\n"
+            f"{info_refund}"
+            "\n\nBei Zahlung über Amazon, sende den Code an @OpaHunter."
+            "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
+        )
+    elif cmd == "pay_paysafe":
+        text = (
+            "💳 <b>PaySafeCard</b>\n\n"
+            "Bitte sende nur den 16-stelligen Code in den Chat:\n"
+            "<code>0000-0000-0000-0000</code>\n"
+            f"{info_refund}"
+        )
+    elif cmd == "pay_crypto":
+        text = (
+            "🪙 <b>Crypto-Adressen:</b>\n\n"
+            "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
+            "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
+            "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
+            f"{info_refund}"
+            "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
+        )
     else:
         await query.edit_message_text("Ungültige Auswahl.")
         return
 
+    # 3. Den zugewiesenen Text mit "Zurück"-Button absenden
     keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+    
+    await query.edit_message_text(
+        text=text, 
+        parse_mode=ParseMode.HTML, 
+        reply_markup=reply_markup
+    )
 
 # ---- PHOTO (Beweis) ----
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
