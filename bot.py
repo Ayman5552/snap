@@ -329,7 +329,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
                 "🌟 Bitte Betrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉t.me/+QT6ghV4v5rZjNmQx"
+                "👉 https://t.me/+QT6ghV4v5rZjNmQx"
             )
             return
     except Exception as e:
@@ -429,7 +429,7 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
         [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
+        [InlineKeyboardButton("🪙 Crypto Zahlungen(am schnellsten)", callback_data="pay_crypto")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
@@ -466,7 +466,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif cmd == "pay_crypto":
         text = (
-            "🪙 <b>Crypto-Adressen :</b>\n\n"
+            "🪙 <b>Crypto-Adressen</b>\n\n"
             "-Tippen, zum Kopieren.</code>\n"
             "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
             "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
@@ -479,7 +479,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+            [InlineKeyboardButton("🪙 Crypto Zahlung(am Schnellsten)", callback_data="pay_crypto")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
