@@ -296,10 +296,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 t.me/+QT6ghV4v5rZjNmQx\n\n"
+        "👉 https://t.me/+QT6ghV4v5rZjNmQx\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername von dem Account. \n\n"
-        "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
+        "Kunden-Bewertungen - t.me/+qICdaAr6lE4yMzZh\n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
     )
     await update.message.reply_text(text)
@@ -330,7 +330,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
                 "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉 t.me/+QT6ghV4v5rZjNmQx"
+                "👉 https://t.me/+QT6ghV4v5rZjNmQx"
             )
             return
     except Exception as e:
@@ -429,8 +429,8 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
-        [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
+        [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],   
+        [InlineKeyboardButton("🪙 Crypto Zahlungen - am schnellsten", callback_data="pay_crypto")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
@@ -467,7 +467,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif cmd == "pay_crypto":
         text = (
-            "🪙 <b>Crypto-Adressen :</b>\n\n"
+         "🪙 <b>Crypto-Adressen :</b>\n\n"
             "-Tippen, zum Kopieren.</code>\n"
             "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
             "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
@@ -480,7 +480,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+             [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
@@ -556,7 +556,7 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗 t.me/+aGmjoQSzo6ZkYTY5"
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗https://https://t.me/+QT6ghV4v5rZjNmQx+ypQ4oWs21ggyZGU5"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
