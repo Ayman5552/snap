@@ -433,7 +433,7 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
-
+]
 # ---- BUTTONS ----
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
