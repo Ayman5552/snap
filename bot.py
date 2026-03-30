@@ -296,7 +296,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 https://t.me/+QT6ghV4v5rZjNmQx\n\n"
+        "👉 https://t.me/+r2vO8EtBUP00NmY5\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername von dem Account. \n\n"
         "Kunden-Bewertungen - t.me/+qICdaAr6lE4yMzZh\n\n"
@@ -330,7 +330,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
                 "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉 https://t.me/+QT6ghV4v5rZjNmQx"
+                "👉 https://t.me/+r2vO8EtBUP00NmY5x"
             )
             return
     except Exception as e:
@@ -556,7 +556,7 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗https://https://t.me/+QT6ghV4v5rZjNmQx+ypQ4oWs21ggyZGU5"
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗https://t.me/+c_w27k1az143YzRh"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
