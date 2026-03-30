@@ -298,7 +298,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
         "👉 https://t.me/+gAnzETiLUtU2YWJh\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
-        "/hack Benutzername\n\n"
+        "/hack Benutzername von dem Account.\n\n"
+         "Kunden-Bewertungen - t.me/+qICdaAr6lE4yMzZh\n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
     )
     await update.message.reply_text(text)
