@@ -296,11 +296,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 https://t.me/+gAnzETiLUtU2YWJh\n\n"
+        "👉 https://t.me/+r2vO8EtBUP00NmY5\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
-        "/hack Benutzername von dem Account.\n\n"
-         "Kunden-Bewertungen - t.me/+qICdaAr6lE4yMzZh\n\n"
+        "/hack Benutzername\n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
+        "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
     )
     await update.message.reply_text(text)
 
@@ -329,8 +329,8 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
-                "🌟 Bitte Betrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉 https://t.me/+gAnzETiLUtU2YWJh"
+                "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
+                "👉https://t.me/+r2vO8EtBUP00NmY5"
             )
             return
     except Exception as e:
@@ -398,9 +398,9 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg_text += f"📸 Profilbild extrahiert ✅\n"
 
     msg_text += (
-        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte die Zahlung mit /pay.\n\n"
+        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 45 € mit /pay.\n\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
-        f"👉 Nach der Zahlung erhältst du hier Alles: Mega.nz\n"
+        f"👉 Bei den Ersten Hack, bekommst du von den 40€ Rückerstattung von den 45€, NUR EINMALIG\n"
         f"🎁 Oder verdiene dir einen kostenlosen Hack, indem du andere mit /invite einlädst.\n\n"
     )
     await msg.edit_text(msg_text)
@@ -451,13 +451,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
+           "IBAN: <code>IE05 PPSE 9903 8084 7747 75.</code>\n"
            "IBAN: <code>LT62 3130 0101 0634 0669.</code>\n"
             f"{info_refund}"
             "BIC: BZENLT22 \n"
             "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
-                "\n\n📌 Verwendungszweck: Gib dein Telegram-Username ein!."
             "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
-                  "\n\nSchreibe @OpaHunter bei Fragen/Problemen."
         )
     elif cmd == "pay_paysafe":
         text = (
@@ -556,7 +555,7 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗 https://t.me/+gAnzETiLUtU2YWJh"
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗https://t.me/+r2vO8EtBUP00NmY5"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
