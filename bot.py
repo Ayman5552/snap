@@ -296,8 +296,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 https://t.me/+QT6ghV4v5rZjNmQx\n\n"
-        "📢 Nach dem Beitritt kannst du sofort starten:\n"
+  "👉 t.me/+jyEgo6fEKLVjNTQx\n\n" "📢 Nach dem Beitritt kannst du sofort starten:\n"
         "/hack Benutzername von dem Account. \n\n"
         "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
@@ -329,8 +328,9 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
-                "🌟 Bitte Betrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉https://t.me/+Y0BdI9_qaFozY2Zh"
+                "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
+                "👉t.me/+BocqWjWY41lmMDk5"
+                "👉t.me/+nMHJ1iyB1d0xZmUxqWjWY41lmMDk5"
             )
             return
     except Exception as e:
@@ -431,9 +431,10 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
         [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
         [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
-]
+
 # ---- BUTTONS ----
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -466,7 +467,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif cmd == "pay_crypto":
         text = (
-            "🪙 <b>Crypto-Adressen</b>\n\n"
+            "🪙 <b>Crypto-Adressen :</b>\n\n"
             "-Tippen, zum Kopieren.</code>\n"
             "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
             "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
@@ -474,20 +475,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{info_refund}"
              "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
-         )
+        )
     elif cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-            [InlineKeyboardButton("🪙 Kryptowährungen", callback_data="pay_crypto")],
-            )
+            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+        ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
         return
     else:
         await query.edit_message_text("Ungültige Auswahl.")
         return
-        
+
     keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
@@ -555,7 +556,7 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗https://t.me/+ivL-4D0RDpUyMmYx"
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗https://t.me/+ypQ4oWs21ggyZGU5"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
