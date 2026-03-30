@@ -329,8 +329,8 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
-                "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉t.me/+gAnzETiLUtU2YWJh"
+                "🌟 Bitte Betrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
+                "👉 https://t.me/+gAnzETiLUtU2YWJh"\n\n"
             )
             return
     except Exception as e:
@@ -398,7 +398,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg_text += f"📸 Profilbild extrahiert ✅\n"
 
     msg_text += (
-        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 20 € mit /pay.\n\n"
+        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte die Zahlung mit /pay.\n\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: Mega.nz\n"
         f"🎁 Oder verdiene dir einen kostenlosen Hack, indem du andere mit /invite einlädst.\n\n"
