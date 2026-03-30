@@ -296,9 +296,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🌟 Bitte Join zuerst den Kanal, um den Bot zu Nutzen ! 🌟\n\n"
-        "👉 https://t.me/+7tgziUqjnZUyZDYx\n\n"
+        "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
         "📢 Nach dem Beitritt kannst du sofort starten:\n"
-        "/hack Benutzername\n\n"
+        "/hack Benutzername von dem Account. \n\n"
+        "Kunden-Bewertung (https://t.me/+qICdaAr6lE4yMzZh) \n\n"
         "Schicke Beweise für Zahlungen (Bank & Crypto als Foto, Paysafe als Code) direkt hier im Chat."
     )
     await update.message.reply_text(text)
@@ -328,8 +329,8 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
-                "🌟 Bitte abonniere zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
-                "👉 https://t.me/+7tgziUqjnZUyZDYx"
+                "🌟 Bitte Betrrete zuerst den Kanal, um den Bot nutzen zu können! 🌟\n\n"
+                "👉t.me/+7tgziUqjnZUyZDYx"
             )
             return
     except Exception as e:
@@ -354,15 +355,15 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     msg = await update.message.reply_text("🚀 Starte den Vorgang...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     await msg.edit_text("🔍 Search for user data...")
     await asyncio.sleep(3)
     await msg.edit_text("⚙️ Bypass security protocolse...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     await msg.edit_text("📡 Access Private Details...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     await msg.edit_text("🎭 Downloading Informations...")
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
 
     # Download Bitmoji and profile photo if available
     bitmoji_downloaded = False
@@ -397,9 +398,9 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg_text += f"📸 Profilbild extrahiert ✅\n"
 
     msg_text += (
-        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 20 € mit /pay.\n\n"
+        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 45 € mit /pay.\n\n"
         f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
-        f"👉 Nach der Zahlung erhältst du hier Alles: Mega.nz\n"
+        f"👉 Bei den Ersten Hack, bekommst du von den 40€ Rückerstattung von den 45€, NUR EINMALIG\n"
         f"🎁 Oder verdiene dir einen kostenlosen Hack, indem du andere mit /invite einlädst.\n\n"
     )
     await msg.edit_text(msg_text)
@@ -429,7 +430,7 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
         [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Kryptowährungen", callback_data="pay_crypto")],
+        [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
@@ -441,19 +442,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmd = query.data
 
     info_refund = (
-        "\n\n⚠️ <b>Wichtig:</b> Bei deiner <u>ersten Zahlung</u> hast du eine "
-        "<b>5 Minuten Testphase</b>. Wenn du in dieser Zeit stornierst, bekommst du <b>15 €</b> zurück.\n\n"
-        "📌 <b>Verwendungszweck:</b> Gib <u>deinen Telegram-Namen</u> an!"
+        "\n\n⚠️ <b>Wichtig:</b> Bei deine  <u>ersten Hack</u> hast du eine "
+        "<b>5 Minuten Refund-Zeit</b>. Wenn du in dieser Zeit Stornierst, bekommst du <b>15 €</b> zurück.\n\n"
+        "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
     )
 
     if cmd == "pay_bank":
         text = (
             "🏦 <b>Banküberweisung</b>\n\n"
             "Empfänger: Euro Hunter\n"
-            "IBAN: <code>IE91PPSE99038055757229</code>\n"
+           "IBAN: <code>LT62 3130 0101 0634 0669.</code>\n"
             f"{info_refund}"
+            "\n\nBei Zahlung über Amazon, sende den Code an @OpaHunter ."
             "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
-            "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
+            "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
         )
     elif cmd == "pay_paysafe":
         text = (
@@ -465,18 +467,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif cmd == "pay_crypto":
         text = (
-            "🪙 <b>Kryptowährungen</b>\n\n"
+            "🪙 <b>Crypto-Adressen :</b>\n\n"
+            "-Tippen, zum Kopieren.</code>\n"
             "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
             "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
-            "- LTC: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
+            "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
             f"{info_refund}"
+             "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
         )
     elif cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-            [InlineKeyboardButton("🪙 Kryptowährungen", callback_data="pay_crypto")],
+            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
@@ -514,7 +518,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             caption=forward_text,
             parse_mode=ParseMode.HTML,
         )
-        await update.message.reply_text("✅ Dein Beweis wurde erfolgreich gesendet!")
+        await update.message.reply_text("✅ Dein Beweis wurde erfolgreich gesendet, wenn es Länger als 5min Dauert, kontaktiere @OpaHunter")
 
         # Hinweis: Content wird nicht automatisch versendet. Admin prüft Beweis und gibt manuell frei.
 
@@ -529,7 +533,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
 
-    
+
     if paysafe_pattern.match(text):
         if user_id in user_proof_sent:
             await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
@@ -552,7 +556,7 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗 https://t.me/+7tgziUqjnZUyZDYx"
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗t.me/+o5LA7bbv0E8zZDdh"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
