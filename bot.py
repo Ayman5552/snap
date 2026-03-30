@@ -474,20 +474,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{info_refund}"
              "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
-        )
-elif cmd == "pay":
-    keyboard = [
-        [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
-        [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+         )
+    elif cmd == "pay":
+        keyboard = [
+            [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
+            [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
+            [InlineKeyboardButton("🪙 Kryptowährungen", callback_data="pay_crypto")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
         return
     else:
         await query.edit_message_text("Ungültige Auswahl.")
         return
-
+        
     keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
