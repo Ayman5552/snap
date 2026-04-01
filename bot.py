@@ -444,7 +444,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     info_refund = (
         "\n\n⚠️ <b>Wichtig:</b> Bei deine  <u>ersten Hack</u> hast du eine "
-        "<b>5 Minuten Refund-Zeit</b>. Wenn du in dieser Zeit Stornierst, bekommst du <b>15 €</b> zurück.\n\n"
+        "<b>5 Minuten Refund-Zeit</b>. Wenn du in dieser Zeit Stornierst, bekommst du <b>30€ von den 45€ €</b> zurück.\n\n"
         "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
     )
 
