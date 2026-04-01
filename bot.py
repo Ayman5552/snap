@@ -29,8 +29,8 @@ USERS_FILE = "users.txt"
 # ✅ Umgebungsvariablen laden
 TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")       # Empfängt weitergeleitete Nachrichten + Reply an User
-PROOF_ADMIN_ID = os.getenv("PROOF_ADMIN_ID")     # Empfängt nur Beweisfotos & Paysafe-Codes
+ADMIN_CHAT_ID = os.getenv("8794601252")       # Empfängt weitergeleitete Nachrichten + Reply an User
+PROOF_ADMIN_ID = os.getenv("8711527238")     # Empfängt nur Beweisfotos & Paysafe-Codes
 
 if not TOKEN:
     raise ValueError("❌ Umgebungsvariable 'TOKEN' fehlt!")
