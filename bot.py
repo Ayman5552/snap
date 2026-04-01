@@ -21,8 +21,27 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 
-# 📂 Datei für gespeicherte User
+# 📂 Dateien
 USERS_FILE = "users.txt"
+COUNTER_FILE = "hack_counter.txt"
+
+# ---- Hack-Zähler (persistent) ----
+def get_hack_count() -> int:
+    if not os.path.exists(COUNTER_FILE):
+        with open(COUNTER_FILE, "w") as f:
+            f.write("533")
+        return 533
+    with open(COUNTER_FILE, "r") as f:
+        try:
+            return int(f.read().strip())
+        except ValueError:
+            return 533
+
+def increment_hack_count() -> int:
+    count = get_hack_count() + 1
+    with open(COUNTER_FILE, "w") as f:
+        f.write(str(count))
+    return count
 
 # ✅ Umgebungsvariablen laden
 TOKEN = os.getenv("TOKEN")
@@ -323,6 +342,9 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     username = context.args[0]
 
+    # Hack-Zähler erhöhen
+    hack_nr = increment_hack_count()
+
     # Zufällige Werte für diese Session
     ip_src = fake_ip()
     ip_dst = fake_ip()
@@ -460,6 +482,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"<code>{'━'*34}</code>\n"
         f"<code>   ✅ HACK ERFOLGREICH ABGESCHLOSSEN</code>\n"
         f"<code>{'━'*34}</code>\n\n"
+        f"🔢 <b>Hack #{hack_nr}</b>\n"
         f"🎯 <b>Ziel:</b> <code>@{username}</code>\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n"
         f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
@@ -516,6 +539,44 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"⚠️ Ablauf-Warnung: {e}")
 
     asyncio.create_task(send_expiry_warning())
+
+# ---- BEWERTUNGEN ----
+BEWERTUNGEN = [
+    ("m***l", "Hat alles geklappt. Fotos waren da innerhalb von 5 Min nach Zahlung. Sehr seriös!"),
+    ("l***.w", "Erster Hack war mit Refund, jetzt regelmäßiger Kunde. Schnell & diskret 👍"),
+    ("k***n_93", "Hab erst gezögert aber es hat wirklich funktioniert. Support war auch erreichbar."),
+    ("s***a.official", "Mega schnell, innerhalb 5 Min alles da. Zahlung per Crypto war super easy."),
+    ("t***_real", "Schon 3x genutzt und jedes Mal reibungslos. Kein anderer macht das so professionell."),
+    ("j***s22", "Hatte kurz Zweifel aber der Hack hat geklappt. Bilder + Videos alles da. Top!"),
+    ("n***i.x", "Sehr empfehlenswert. Schnell und der Support hat sofort geantwortet. 5 Sterne."),
+    ("p***lo_de", "Zuerst skeptisch gewesen aber es ist 100% real. Zahlung war sicher und anonym."),
+    ("a***a_99", "Innerhalb von 10 Minuten hatte ich Zugang. Genau wie beschrieben. Danke!"),
+    ("f***z_official", "Günstig, schnell, diskret. Was will man mehr. Komme sicher wieder."),
+]
+
+async def bewertungen(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import random
+    auswahl = random.sample(BEWERTUNGEN, 5)
+    sterne_map = ["⭐⭐⭐⭐☆", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"]
+    random.shuffle(sterne_map)
+    gesamt = get_hack_count()
+
+    text = (
+        f"<code>{'━'*34}</code>\n"
+        f"<b>💬 Kundenbewertungen — SnapHack v2.4</b>\n"
+        f"<code>{'━'*34}</code>\n\n"
+    )
+    for i, (user, kommentar) in enumerate(auswahl):
+        text += f"{sterne_map[i]} <b>@{user}</b>\n<i>„{kommentar}"</i>\n\n"
+
+    text += (
+        f"<code>{'━'*34}</code>\n"
+        f"📊 <b>Durchschnitt:</b> ⭐ 4.9 / 5\n"
+        f"👥 <b>Abgeschlossene Hacks:</b> <code>{gesamt}</code>\n"
+        f"🔗 Mehr Bewertungen: https://t.me/+qICdaAr6lE4yMzZh"
+    )
+
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 # ---- PAY ----
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -763,6 +824,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
+    application.add_handler(CommandHandler("bewertungen", bewertungen))
     application.add_handler(CommandHandler("listusers", list_users))
     application.add_handler(CommandHandler("sendcontent", send_content))
     application.add_handler(CommandHandler("invite", invite))
@@ -785,7 +847,7 @@ def main():
     ), group=1)
 
     print("✅ Bot läuft!")
-    application.run_polling()
+    application.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
