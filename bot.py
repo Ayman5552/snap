@@ -447,7 +447,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
     )
 
-  if cmd == "pay_bank":
+if cmd == "pay_bank":
     text = (
         "🏦 <b>Banküberweisung</b>\n\n"
         "Empfänger: Euro Hunter\n"
@@ -478,23 +478,23 @@ elif cmd == "pay_crypto":
         "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
         "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
     )
-    
-    elif cmd == "pay":
-        keyboard = [
-            [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
-            [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
-        return
-    else:
-        await query.edit_message_text("Ungültige Auswahl.")
-        return
 
-    keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
+elif cmd == "pay":
+    keyboard = [
+        [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
+        [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
+        [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+    await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+    return
+else:
+    await query.edit_message_text("Ungültige Auswahl.")
+    return
+
+keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
+reply_markup = InlineKeyboardMarkup(keyboard)
+await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
 
 # ---- PHOTO (Beweis) ----
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
