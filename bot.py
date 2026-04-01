@@ -472,9 +472,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🪙 <b>Crypto-Adressen :</b>\n\n"
             "- Tippen, zum Kopieren.\n"
-            "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
-            "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
-            "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
+            "- BITCOIN: <code>bc1q4jlqdsr8epqp9fd7vacn24m7s0hahdau4t0s6q</code>\n"
+            "- ETHEREUM: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
+            "- SOLANA: <code>4WEvmt31TcuBXVR5Qcw6Ea6R4KZBQHSJ3uHCZWiFmCb7</code>\n"
             f"{info_refund}"
             "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
             "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
