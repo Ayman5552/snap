@@ -447,25 +447,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
     )
 
-    if cmd == "pay_bank":
-        text = (
-            "🏦 <b>Banküberweisung</b>\n\n"
-            "Empfänger: Euro Hunter\n"
-           "IBAN: <code>IE32 PPSE 9903 8091 8899 18.</code>\n"
-            f"{info_refund}"
-            "\n\nBei Zahlung über Crypto, Amazon, sende den Code an @OpaHunter ."
-            "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
-            "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
-        )
-    elif cmd == "pay_paysafe":
-        text = (
-            "💳 <b>PaySafeCard</b>\n\n"
-            "Bitte sende nur den 16-stelligen Code ins Chat:\n"
-            "<code>0000-0000-0000-0000</code>\n"
-            f"{info_refund}"
-            "\n\nDer Code wird überprüft und weitergeleitet."
-        )
-   elif cmd == "pay_crypto":
+  if cmd == "pay_bank":
+    text = (
+        "🏦 <b>Banküberweisung</b>\n\n"
+        "Empfänger: Euro Hunter\n"
+        "IBAN: <code>IE32 PPSE 9903 8091 8899 18.</code>\n"
+        f"{info_refund}"
+        "\n\nBei Zahlung über Crypto, Amazon, sende den Code an @OpaHunter ."
+        "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
+        "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
+    )
+
+elif cmd == "pay_paysafe":
+    text = (
+        "💳 <b>PaySafeCard</b>\n\n"
+        "Bitte sende nur den 16-stelligen Code ins Chat:\n"
+        "<code>0000-0000-0000-0000</code>\n"
+        f"{info_refund}"
+        "\n\nDer Code wird überprüft und weitergeleitet."
+    )
+
+elif cmd == "pay_crypto":
     text = (
         "🪙 <b>Crypto-Adressen :</b>\n\n"
         "- Tippen, zum Kopieren.\n"
@@ -476,6 +478,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
         "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
     )
+    
     elif cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
