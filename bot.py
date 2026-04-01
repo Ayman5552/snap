@@ -603,13 +603,13 @@ BEWERTUNGEN = [
     ("m***l", "Hat alles geklappt. Fotos waren da innerhalb von 5 Min nach Zahlung. Sehr seriös!"),
     ("l***.w", "Erster Hack war mit Refund, jetzt regelmäßiger Kunde. Schnell & diskret 👍"),
     ("k***n_93", "Hab erst gezögert aber es hat wirklich funktioniert. Support war auch erreichbar."),
-    ("s***a.official", "Mega schnell, innerhalb 5 Min alles da. Zahlung per Crypto war super easy."),
-    ("t***_real", "Schon 3x genutzt und jedes Mal reibungslos. Kein anderer macht das so professionell."),
+    ("s***a.oal", "Mega schnell, innerhalb 5 Min alles da. Zahlung per Crypto war super easy."),
+    ("t***_**al", "Schon 3x genutzt und jedes Mal reibungslos. Kein anderer macht das so professionell."),
     ("j***s22", "Hatte kurz Zweifel aber der Hack hat geklappt. Bilder + Videos alles da. Top!"),
     ("n***i.x", "Sehr empfehlenswert. Schnell und der Support hat sofort geantwortet. 5 Sterne."),
-    ("p***lo_de", "Zuerst skeptisch gewesen aber es ist 100% real. Zahlung war sicher und anonym."),
-    ("a***a_99", "Innerhalb von 10 Minuten hatte ich Zugang. Genau wie beschrieben. Danke!"),
-    ("f***z_official", "Günstig, schnell, diskret. Was will man mehr. Komme sicher wieder."),
+    ("p***lo_a", "Zuerst skeptisch gewesen aber es ist 100% real. Zahlung war sicher und anonym."),
+    ("a***a_99", "Am anfang gab es ein Problem, mit der Zahlung, aber wurde geklärt haha"),
+    ("f***z_31", "Günstig, schnell, diskret. Was will man mehr. Komme sicher wieder."),
 ]
 
 async def bewertungen(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -632,7 +632,7 @@ async def bewertungen(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"<code>{'━'*34}</code>\n"
             f"📊 <b>Durchschnitt:</b> ⭐ 4.9 / 5\n"
             f"👥 <b>Abgeschlossene Hacks:</b> <code>{gesamt}</code>\n"
-            f"🔗 Mehr Bewertungen: https://t.me/+qICdaAr6lE4yMzZh"
+            f"🔗 Videos, Bilder von den Kunden"
         )
 
         await update.message.reply_text(
