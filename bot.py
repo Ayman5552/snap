@@ -626,7 +626,7 @@ async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---- DUMMY INVITE/REDEEM/FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗t.me/+o5LA7bbv0E8zZDdh"
+    msg = "🎁 Lade Freunde ein und erhalte einen Free Hack! ( es müsste einer über dein Link kaufen)\n\n🔗 https://t.me/+o5LA7bbv0E8zZDdh"
     await update.message.reply_text(msg, parse_mode=ParseMode.HTML)
 
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
