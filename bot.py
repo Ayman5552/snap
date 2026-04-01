@@ -426,6 +426,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"❌ Fehler beim Senden von Profilbild: {e}")
 
 # ---- PAY ----
+# ---- PAY ----
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
@@ -447,54 +448,54 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 <b>Verwendungszweck:</b> Gib <u>dein Telegram-Username</u> an!"
     )
 
-if cmd == "pay_bank":
-    text = (
-        "🏦 <b>Banküberweisung</b>\n\n"
-        "Empfänger: Euro Hunter\n"
-        "IBAN: <code>IE32 PPSE 9903 8091 8899 18.</code>\n"
-        f"{info_refund}"
-        "\n\nBei Zahlung über Crypto, Amazon, sende den Code an @OpaHunter ."
-        "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
-        "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
-    )
+    if cmd == "pay_bank":
+        text = (
+            "🏦 <b>Banküberweisung</b>\n\n"
+            "Empfänger: Euro Hunter\n"
+            "IBAN: <code>IE32 PPSE 9903 8091 8899 18.</code>\n"
+            f"{info_refund}"
+            "\n\nBei Zahlung über Crypto, Amazon, sende den Code an @OpaHunter ."
+            "\n\nTippe auf *Weiter*, auch wenn Fehler bei Empfänger Überüprüfung kommt."
+            "\n\nBitte sende nach der Zahlung ein Foto deines Zahlungsbelegs."
+        )
 
-elif cmd == "pay_paysafe":
-    text = (
-        "💳 <b>PaySafeCard</b>\n\n"
-        "Bitte sende nur den 16-stelligen Code ins Chat:\n"
-        "<code>0000-0000-0000-0000</code>\n"
-        f"{info_refund}"
-        "\n\nDer Code wird überprüft und weitergeleitet."
-    )
+    elif cmd == "pay_paysafe":
+        text = (
+            "💳 <b>PaySafeCard</b>\n\n"
+            "Bitte sende nur den 16-stelligen Code ins Chat:\n"
+            "<code>0000-0000-0000-0000</code>\n"
+            f"{info_refund}"
+            "\n\nDer Code wird überprüft und weitergeleitet."
+        )
 
-elif cmd == "pay_crypto":
-    text = (
-        "🪙 <b>Crypto-Adressen :</b>\n\n"
-        "- Tippen, zum Kopieren.\n"
-        "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
-        "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
-        "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
-        f"{info_refund}"
-        "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
-        "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
-    )
+    elif cmd == "pay_crypto":
+        text = (
+            "🪙 <b>Crypto-Adressen :</b>\n\n"
+            "- Tippen, zum Kopieren.\n"
+            "- BTC: <code>bc1q4qxfygq79xphmagy365d73d6z96pedxz9l3csf</code>\n"
+            "- ETH: <code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n"
+            "- SOL: <code>FdJ6GL9ukKGau434JxwCKtQ6ArFMqtRGRoD771WmBCYy</code>\n"
+            f"{info_refund}"
+            "\n\nFalls du kein Crypto besitzt, kannst du es Gebührenfrei bei cryptovoucher.io kaufen."
+            "\n\nBitte sende hier ein Foto deines Zahlungsbelegs."
+        )
 
-elif cmd == "pay":
-    keyboard = [
-        [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
-        [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
-        [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
-    ]
+    elif cmd == "pay":
+        keyboard = [
+            [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
+            [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
+            [InlineKeyboardButton("🪙 Crypto Zahlung (am Schnellsten)", callback_data="pay_crypto")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
+        return
+    else:
+        await query.edit_message_text("Ungültige Auswahl.")
+        return
+
+    keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text("Wähle eine Zahlungsmethode aus:", reply_markup=reply_markup)
-    return
-else:
-    await query.edit_message_text("Ungültige Auswahl.")
-    return
-
-keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
-reply_markup = InlineKeyboardMarkup(keyboard)
-await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+    await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
 
 # ---- PHOTO (Beweis) ----
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
