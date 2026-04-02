@@ -87,6 +87,13 @@ user_hack_times: dict[int, list] = {}
 premium_pending: set[int] = set()
 premium_approved: set[int] = set()
 
+# ---- Hilfsfunktion: Nutzer-Bezeichnung ----
+def user_label(from_user) -> str:
+    """Gibt @username zurück, falls vorhanden, sonst ID."""
+    if from_user.username:
+        return f"@{from_user.username}"
+    return f"ID: {from_user.id}"
+
 # 📥 GitHub Media Downloader
 def download_github_media():
     github_api_base = "https://api.github.com/repos/Ayman5552/snap/contents"
@@ -377,18 +384,16 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Fehler bei der Kanal-Überprüfung. Bitte später erneut versuchen.")
         return
 
-    # Premium-Sperre: Zahlung noch nicht bestätigt
     if user_plan.get(user_id) == "premium" and user_id not in premium_approved:
         await update.message.reply_text(
             "⏳ <b>Dein Premium-Zugang wird noch geprüft.</b>\n\n"
             "Sobald dein Zahlungsbeleg bestätigt wurde, wirst du automatisch benachrichtigt "
             "und kannst sofort loslegen.\n\n"
-            "Falls du noch kein Beweisfoto gesendet hast, sende es jetzt einfach hier im Chat.",
+            "Falls du noch kein Beweisfoto oder -video gesendet hast, sende es jetzt einfach hier im Chat.",
             parse_mode=ParseMode.HTML
         )
         return
 
-    # Hack-Limit: max 2 pro 12 Stunden
     now = time.time()
     recent = [t for t in user_hack_times.get(user_id, []) if now - t < HACK_WINDOW_SECS]
     if len(recent) >= HACK_LIMIT:
@@ -416,7 +421,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # Hack registrieren
     user_hack_times[user_id] = recent + [now]
 
     username = context.args[0]
@@ -606,6 +610,7 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
         [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
         [InlineKeyboardButton("🪙 Crypto — Sofort & anonym", callback_data="pay_crypto")],
+        [InlineKeyboardButton("⬅️ Zurück zum Hauptmenü", callback_data="back_to_main")],
     ]
     await update.message.reply_text(
         "💳 <b>Zahlung — Zugang freischalten</b>\n"
@@ -640,14 +645,63 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 <b>Verwendungszweck:</b> Gib <u>deinen Telegram-Username</u> an!"
     )
 
-    if cmd == "plan_basic":
+    if cmd == "back_to_plans":
+        await query.edit_message_text(
+            PACKAGE_TEXT,
+            parse_mode=ParseMode.HTML,
+            reply_markup=PACKAGE_KEYBOARD
+        )
+        return
+    elif cmd == "back_to_main":
+        uid = query.from_user.id
+        plan = user_plan.get(uid, "basic")
+        back_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")]
+        ])
+        await query.edit_message_text(
+            main_menu_text(plan),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+            reply_markup=back_kb
+        )
+        return
+    elif cmd == "back_to_refund":
+        uid = query.from_user.id
+        refund_state.pop(uid, None)
+        refund_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🏦 Banküberweisung", callback_data="refund_bank")],
+            [InlineKeyboardButton("💸 PayPal", callback_data="refund_paypal")],
+            [InlineKeyboardButton("⬅️ Zurück zum Hauptmenü", callback_data="back_to_main")],
+        ])
+        await query.edit_message_text(
+            "💰 <b>Rückerstattung beantragen</b>\n"
+            "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            "Bitte wähle deine bevorzugte Auszahlungsmethode:\n\n"
+            "⚠️ <b>Wichtig:</b> Du musst vorab ein <u>Beweisvideo deiner Überweisung</u> einschicken.\n"
+            "Nach erfolgreicher Prüfung erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.",
+            parse_mode=ParseMode.HTML,
+            reply_markup=refund_kb
+        )
+        return
+    elif cmd == "plan_basic":
         user_plan[query.from_user.id] = "basic"
-        await query.edit_message_text(main_menu_text("basic"), parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        back_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")]
+        ])
+        await query.edit_message_text(
+            main_menu_text("basic"),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+            reply_markup=back_kb
+        )
         return
     elif cmd == "plan_premium":
         uid = query.from_user.id
         user_plan[uid] = "premium"
         premium_pending.add(uid)
+        back_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")]
+        ])
         await query.edit_message_text(
             "💎 <b>PREMIUM-Paket gewählt!</b>\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
@@ -656,9 +710,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
             "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n\n"
-            "📸 <b>Sende jetzt ein Foto deines Zahlungsbelegs hier im Chat.</b>\n\n"
+            "📸📹 <b>Sende jetzt ein Foto oder Video deines Zahlungsbelegs hier im Chat.</b>\n\n"
             "<i>Dein Konto wird nach Prüfung innerhalb weniger Minuten freigeschaltet.</i>",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
+            reply_markup=back_kb
         )
         return
     elif cmd.startswith("approve_premium_"):
@@ -692,7 +747,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "💶 <b>Betrag:</b> <code>45,00 EUR</code>\n\n"
             "ℹ️ Tippe auf IBAN zum Kopieren.\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n"
-            f"{info_refund}\n\n📸 <b>Sende danach ein Foto deines Zahlungsbelegs hier im Chat.</b>"
+            f"{info_refund}\n\n📸📹 <b>Sende danach ein Foto oder Video deines Zahlungsbelegs hier im Chat.</b>"
         )
     elif cmd == "pay_paysafe":
         text = (
@@ -710,13 +765,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Ξ <b>Ethereum:</b>\n<code>0x456F994998c7c36892e6E0dcd8A71a5e85dddc56</code>\n\n"
             "◎ <b>Solana:</b>\n<code>4WEvmt31TcuBXVR5Qcw6Ea6R4KZBQHSJ3uHCZWiFmCb7</code>\n\n"
             "💡 Kein Crypto? Kaufe es gebührenfrei auf <b>cryptovoucher.io</b>\n"
-            f"{info_refund}\n\n📸 <b>Sende danach ein Foto deines Zahlungsbelegs hier im Chat.</b>"
+            f"{info_refund}\n\n📸📹 <b>Sende danach ein Foto oder Video deines Zahlungsbelegs hier im Chat.</b>"
         )
     elif cmd == "pay":
         keyboard = [
             [InlineKeyboardButton("🏦 Banküberweisung", callback_data="pay_bank")],
             [InlineKeyboardButton("💳 PaySafeCard", callback_data="pay_paysafe")],
             [InlineKeyboardButton("🪙 Crypto — Sofort & anonym", callback_data="pay_crypto")],
+            [InlineKeyboardButton("⬅️ Zurück zum Hauptmenü", callback_data="back_to_main")],
         ]
         await query.edit_message_text(
             "💳 <b>Zahlung — Zugang freischalten</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
@@ -727,18 +783,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     elif cmd == "refund_bank":
         refund_state[query.from_user.id] = {"step": "bank_iban", "method": "bank", "data": {}}
+        back_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Zurück", callback_data="back_to_refund")]
+        ])
         await query.edit_message_text(
             "🏦 <b>Banküberweisung — Rückerstattung</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "Bitte gib deine <b>IBAN</b> ein:\n\n<i>Beispiel: DE89 3704 0044 0532 0130 00</i>",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
+            reply_markup=back_kb
         )
         return
     elif cmd == "refund_paypal":
         refund_state[query.from_user.id] = {"step": "paypal_email", "method": "paypal", "data": {}}
+        back_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("⬅️ Zurück", callback_data="back_to_refund")]
+        ])
         await query.edit_message_text(
             "💸 <b>PayPal — Rückerstattung</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "Bitte gib deine <b>PayPal-E-Mail-Adresse</b> ein:",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
+            reply_markup=back_kb
         )
         return
     else:
@@ -748,7 +812,60 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("⬅️ Zurück", callback_data="pay")]]
     await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard))
 
-# ---- PHOTO (Beweis) ----
+# ---- Hilfsfunktion: Beweis ans Admin weiterleiten ----
+async def _forward_proof_photo(context, from_user, photo_file_id, caption, is_premium: bool):
+    uid = from_user.id
+    label = user_label(from_user)
+    betrag = "95 €" if is_premium else "45 €"
+    prefix = "💎 <b>PREMIUM-Zahlungsbeleg</b>" if is_premium else "📸 <b>Neuer Zahlungsbeweis</b>"
+    forward_text = (
+        f"{prefix}\n\n"
+        f"👤 {label}\n"
+        f"💶 Betrag: {betrag}\n"
+        f"Bildunterschrift: {caption}"
+    )
+    if is_premium:
+        approve_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"✅ Premium freischalten für {label}", callback_data=f"approve_premium_{uid}")]
+        ])
+        await context.bot.send_photo(
+            chat_id=ADMIN_CHAT_ID, photo=photo_file_id,
+            caption=forward_text, parse_mode=ParseMode.HTML, reply_markup=approve_kb
+        )
+    else:
+        sent = await context.bot.send_photo(
+            chat_id=ADMIN_CHAT_ID, photo=photo_file_id,
+            caption=forward_text, parse_mode=ParseMode.HTML
+        )
+        forwarded_msg_to_user[sent.message_id] = uid
+
+async def _forward_proof_video(context, from_user, video_file_id, caption, is_premium: bool):
+    uid = from_user.id
+    label = user_label(from_user)
+    betrag = "95 €" if is_premium else "45 €"
+    prefix = "💎 <b>PREMIUM-Zahlungsbeleg (Video)</b>" if is_premium else "📹 <b>Neuer Zahlungsbeweis (Video)</b>"
+    forward_text = (
+        f"{prefix}\n\n"
+        f"👤 {label}\n"
+        f"💶 Betrag: {betrag}\n"
+        f"Bildunterschrift: {caption}"
+    )
+    if is_premium:
+        approve_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"✅ Premium freischalten für {label}", callback_data=f"approve_premium_{uid}")]
+        ])
+        await context.bot.send_video(
+            chat_id=ADMIN_CHAT_ID, video=video_file_id,
+            caption=forward_text, parse_mode=ParseMode.HTML, reply_markup=approve_kb
+        )
+    else:
+        sent = await context.bot.send_video(
+            chat_id=ADMIN_CHAT_ID, video=video_file_id,
+            caption=forward_text, parse_mode=ParseMode.HTML
+        )
+        forwarded_msg_to_user[sent.message_id] = uid
+
+# ---- PHOTO (Zahlungsbeweis) ----
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
@@ -759,22 +876,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo = update.message.photo[-1]
     caption = update.message.caption or ""
 
-    # Premium-Freischaltungs-Foto
     if user_id in premium_pending:
-        uname = from_user.username or from_user.first_name
-        forward_text = (
-            f"💎 <b>PREMIUM-Zahlungsbeleg</b>\n\n"
-            f"👤 @{uname} (ID: <code>{user_id}</code>)\n"
-            f"💶 Betrag: 95 €\n\nBildunterschrift: {caption}"
-        )
-        approve_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton(f"✅ Premium freischalten für @{uname}", callback_data=f"approve_premium_{user_id}")]
-        ])
         try:
-            await context.bot.send_photo(
-                chat_id=ADMIN_CHAT_ID, photo=photo.file_id,
-                caption=forward_text, parse_mode=ParseMode.HTML, reply_markup=approve_kb
-            )
+            await _forward_proof_photo(context, from_user, photo.file_id, caption, is_premium=True)
             await update.message.reply_text(
                 "✅ <b>Zahlungsbeleg erhalten!</b>\n\n"
                 "Dein Beleg wird gerade geprüft. Du wirst automatisch benachrichtigt, "
@@ -787,24 +891,12 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt.")
         return
 
-    # Normaler Zahlungsbeleg
     if user_id in user_proof_sent:
         await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
         return
 
-    forward_text = (
-        f"📸 Neuer Beweis von @{from_user.username or from_user.first_name} (ID: {user_id})\n\n"
-        f"Bildunterschrift:\n{caption}"
-    )
-
     try:
-        sent = await context.bot.send_photo(
-            chat_id=ADMIN_CHAT_ID,
-            photo=photo.file_id,
-            caption=forward_text,
-            parse_mode=ParseMode.HTML,
-        )
-        forwarded_msg_to_user[sent.message_id] = user_id
+        await _forward_proof_photo(context, from_user, photo.file_id, caption, is_premium=False)
         user_proof_sent.add(user_id)
         await update.message.reply_text(
             "✅ Dein Zahlungsbeweis wurde erfolgreich übermittelt! "
@@ -817,7 +909,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt."
         )
 
-# ---- VIDEO (Refund-Beweis) ----
+# ---- VIDEO (Zahlungsbeweis + Refund-Beweis) ----
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
@@ -825,26 +917,68 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id == ADMIN_CHAT_ID:
         return
 
-    if user_id not in refund_state:
+    video = update.message.video or update.message.document
+    caption = update.message.caption or ""
+
+    # Premium-Freischaltungs-Video (Zahlungsbeweis)
+    if user_id in premium_pending:
+        if not video:
+            await update.message.reply_text("⚠️ Bitte sende das Video als Video-Nachricht.")
+            return
+        try:
+            await _forward_proof_video(context, from_user, video.file_id, caption, is_premium=True)
+            await update.message.reply_text(
+                "✅ <b>Zahlungsbeleg (Video) erhalten!</b>\n\n"
+                "Dein Beleg wird gerade geprüft. Du wirst automatisch benachrichtigt, "
+                "sobald dein Premium-Zugang freigeschaltet wurde.\n\n"
+                "<i>Das dauert in der Regel nur wenige Minuten.</i>",
+                parse_mode=ParseMode.HTML
+            )
+        except Exception as e:
+            print(f"❌ Premium-Video: {e}")
+            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt.")
         return
 
+    # Normaler Zahlungsbeleg als Video (kein Refund-Ablauf aktiv)
+    if user_id not in refund_state:
+        if not video:
+            return
+        if user_id in user_proof_sent:
+            await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
+            return
+        try:
+            await _forward_proof_video(context, from_user, video.file_id, caption, is_premium=False)
+            user_proof_sent.add(user_id)
+            await update.message.reply_text(
+                "✅ Dein Zahlungsbeweis (Video) wurde erfolgreich übermittelt! "
+                "Wir prüfen ihn so schnell wie möglich. "
+                "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @OpaHunter 😊"
+            )
+        except Exception as e:
+            print(f"❌ Fehler beim Senden des Beweis-Videos an Admin ({ADMIN_CHAT_ID}): {e}")
+            await update.message.reply_text(
+                "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt."
+            )
+        return
+
+    # Refund-Beweis-Video
     state = refund_state[user_id]
     if state["step"] not in ("bank_video", "paypal_video"):
         return
 
-    video = update.message.video or update.message.document
     if not video:
         await update.message.reply_text("⚠️ Bitte sende das Video als Video-Nachricht (nicht als Datei).")
         return
 
     method = state["method"]
     data = state["data"]
+    label = user_label(from_user)
 
     if method == "bank":
         details = (
             f"🔄 <b>Refund-Antrag — Banküberweisung</b>\n"
             f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-            f"👤 <b>Nutzer:</b> @{from_user.username or from_user.first_name} (ID: <code>{user_id}</code>)\n"
+            f"👤 <b>Nutzer:</b> {label}\n"
             f"🏦 <b>IBAN:</b> <code>{data.get('iban', '—')}</code>\n"
             f"👤 <b>Kontoinhaber:</b> <code>{data.get('name', '—')}</code>\n"
             f"💶 <b>Methode:</b> Banküberweisung"
@@ -853,16 +987,15 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         details = (
             f"🔄 <b>Refund-Antrag — PayPal</b>\n"
             f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-            f"👤 <b>Nutzer:</b> @{from_user.username or from_user.first_name} (ID: <code>{user_id}</code>)\n"
+            f"👤 <b>Nutzer:</b> {label}\n"
             f"📧 <b>PayPal-E-Mail:</b> <code>{data.get('email', '—')}</code>\n"
             f"💶 <b>Methode:</b> PayPal"
         )
 
     try:
-        file_id = video.file_id
         await context.bot.send_video(
             chat_id=ADMIN_CHAT_ID,
-            video=file_id,
+            video=video.file_id,
             caption=details,
             parse_mode=ParseMode.HTML
         )
@@ -889,7 +1022,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
 
-    # ---- Admin: Reply weiterschicken ----
+    # Admin: Reply weiterschicken
     if user_id == ADMIN_CHAT_ID:
         if update.message.reply_to_message:
             original = update.message.reply_to_message
@@ -911,7 +1044,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
         return
 
-    # ---- Hilfe-Ticket Ablauf ----
+    # Hilfe-Ticket Ablauf
     if user_id in hilfe_state:
         state = hilfe_state[user_id]
         step = state["step"]
@@ -950,13 +1083,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
             email = state["data"]["email"]
-            uname = from_user.username or from_user.first_name
+            label = user_label(from_user)
             del hilfe_state[user_id]
 
             ticket_text = (
                 f"🎫 <b>Neues Support-Ticket</b>\n"
                 f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-                f"👤 <b>Nutzer:</b> @{uname} (ID: <code>{user_id}</code>)\n"
+                f"👤 <b>Nutzer:</b> {label}\n"
                 f"📧 <b>E-Mail:</b> <code>{email}</code>\n"
                 f"📝 <b>Grund:</b>\n{text}"
             )
@@ -980,7 +1113,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-    # ---- Refund-Ablauf ----
+    # Refund-Ablauf
     if user_id in refund_state:
         state = refund_state[user_id]
         step = state["step"]
@@ -1018,14 +1151,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("⚠️ Fehler beim Speichern. Bitte nochmal eingeben.")
             return
 
-    # ---- Paysafe-Code ----
+    # Paysafe-Code
     paysafe_pattern = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{4}$")
     if paysafe_pattern.match(text):
         if user_id in user_proof_sent:
             await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
             return
+        label = user_label(from_user)
         msg = (
-            f"🎫 Neuer Paysafe-Code von @{from_user.username or from_user.first_name} (ID: {user_id}):\n"
+            f"🎫 Neuer Paysafe-Code von {label}:\n"
             f"<code>{text}</code>"
         )
         try:
@@ -1065,6 +1199,7 @@ async def refund(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🏦 Banküberweisung", callback_data="refund_bank")],
         [InlineKeyboardButton("💸 PayPal", callback_data="refund_paypal")],
+        [InlineKeyboardButton("⬅️ Zurück zum Hauptmenü", callback_data="back_to_main")],
     ]
     await update.message.reply_text(
         "💰 <b>Rückerstattung beantragen</b>\n"
@@ -1108,7 +1243,7 @@ def main():
     application.add_handler(CallbackQueryHandler(age_check, pattern="^age_"))
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    application.add_handler(MessageHandler(filters.VIDEO, handle_video))
+    application.add_handler(MessageHandler(filters.VIDEO | filters.Document.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
     print("✅ Bot läuft!")
