@@ -87,12 +87,84 @@ user_hack_times: dict[int, list] = {}
 premium_pending: set[int] = set()
 premium_approved: set[int] = set()
 
+# ---- Letztes Hack-Ziel pro Nutzer ----
+user_last_target: dict[int, str] = {}
+
+# ---- Aktive Erinnerungs-Tasks ----
+user_reminder_tasks: dict[int, asyncio.Task] = {}
+
 # ---- Hilfsfunktion: Nutzer-Bezeichnung ----
 def user_label(from_user) -> str:
     """Gibt @username zurück, falls vorhanden, sonst ID."""
     if from_user.username:
         return f"@{from_user.username}"
     return f"ID: {from_user.id}"
+
+# ---- Automatische Erinnerungen ----
+async def schedule_reminders(bot, user_id: int):
+    try:
+        await asyncio.sleep(3600)
+        if user_id not in user_proof_sent:
+            try:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(
+                        "⏳ <b>Dein Hack-Zugang läuft ab!</b>\n\n"
+                        "Hey! Du hast vor Kurzem ein Paket ausgewählt, aber noch keine "
+                        "Zahlung abgeschlossen.\n\n"
+                        "📂 Deine gesicherten Daten werden in Kürze automatisch gelöscht.\n\n"
+                        "👉 Jetzt freischalten mit /pay\n\n"
+                        "🔒 Alle Zahlungen sind sicher &amp; anonym."
+                    ),
+                    parse_mode=ParseMode.HTML
+                )
+            except Exception:
+                pass
+        await asyncio.sleep(7200)
+        if user_id not in user_proof_sent:
+            try:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(
+                        "🚨 <b>Letzte Chance — Zugang verfällt bald!</b>\n\n"
+                        "Wir haben noch keinen Zahlungsbeleg von dir erhalten.\n\n"
+                        "💾 Die gesicherten Inhalte des gehackten Kontos werden in "
+                        "wenigen Stunden endgültig gelöscht.\n\n"
+                        "💳 Jetzt zahlen: /pay\n"
+                        "📸 Oder sende deinen Zahlungsbeleg direkt hier im Chat.\n\n"
+                        "❓ Fragen? Schreib uns: @OpaHunter"
+                    ),
+                    parse_mode=ParseMode.HTML
+                )
+            except Exception:
+                pass
+    except asyncio.CancelledError:
+        pass
+
+async def schedule_premium_reminder(bot, user_id: int):
+    try:
+        await asyncio.sleep(1800)
+        if user_id in premium_pending and user_id not in premium_approved:
+            try:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(
+                        "💎 <b>Dein Premium-Zugang wartet auf dich!</b>\n\n"
+                        "Du hast das PREMIUM-Paket ausgewählt, aber noch keinen "
+                        "Zahlungsbeleg eingeschickt.\n\n"
+                        "📸 Sende einfach ein Foto oder Video deiner Überweisung "
+                        "direkt hier im Chat — dann schalten wir dich sofort frei.\n\n"
+                        "🏦 <b>IBAN:</b> <code>IE32 PPSE 9903 8091 8899 18</code>\n"
+                        "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
+                        "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
+                        "⏳ Dein Platz ist noch reserviert!"
+                    ),
+                    parse_mode=ParseMode.HTML
+                )
+            except Exception:
+                pass
+    except asyncio.CancelledError:
+        pass
 
 # 📥 GitHub Media Downloader
 def download_github_media():
@@ -424,6 +496,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_hack_times[user_id] = recent + [now]
 
     username = context.args[0]
+    user_last_target[user_id] = username
     hack_nr = increment_hack_count()
     ip_src = fake_ip()
     ip_dst = fake_ip()
@@ -684,7 +757,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     elif cmd == "plan_basic":
-        user_plan[query.from_user.id] = "basic"
+        uid = query.from_user.id
+        user_plan[uid] = "basic"
+        if uid in user_reminder_tasks:
+            user_reminder_tasks[uid].cancel()
+        user_reminder_tasks[uid] = asyncio.create_task(schedule_reminders(context.bot, uid))
         back_kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")]
         ])
@@ -699,6 +776,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         uid = query.from_user.id
         user_plan[uid] = "premium"
         premium_pending.add(uid)
+        asyncio.create_task(schedule_premium_reminder(context.bot, uid))
         back_kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")]
         ])
