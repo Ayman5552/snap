@@ -76,6 +76,7 @@ user_content_counts = {}
 age_verified = set()
 user_plan: dict[int, str] = {}
 refund_state: dict[int, dict] = {}
+hilfe_state: dict[int, dict] = {}
 
 # ---- Hack-Limit ----
 HACK_LIMIT = 2
@@ -614,6 +615,19 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
+# ---- HILFE (Support-Ticket) ----
+async def hilfe(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    hilfe_state[user_id] = {"step": "email", "data": {}}
+    await update.message.reply_text(
+        "🎫 <b>Support-Ticket öffnen</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "Unser Support-Team hilft dir gerne weiter.\n\n"
+        "📧 <b>Schritt 1 von 2:</b>\n"
+        "Bitte gib deine <b>E-Mail-Adresse</b> ein:",
+        parse_mode=ParseMode.HTML
+    )
+
 # ---- BUTTONS ----
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -760,7 +774,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_photo(
                 chat_id=ADMIN_CHAT_ID, photo=photo.file_id,
                 caption=forward_text, parse_mode=ParseMode.HTML, reply_markup=approve_kb
-                            )
+            )
             await update.message.reply_text(
                 "✅ <b>Zahlungsbeleg erhalten!</b>\n\n"
                 "Dein Beleg wird gerade geprüft. Du wirst automatisch benachrichtigt, "
@@ -864,7 +878,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"❌ Refund-Video Fehler: {e}")
         await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal.")
 
-# ---- TEXT (Admin-Reply + Paysafe + Refund-Schritte) ----
+# ---- TEXT (Admin-Reply + Paysafe + Refund-Schritte + Hilfe-Ticket) ----
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message is None:
         return
@@ -896,6 +910,75 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Der Nutzer hat Privatsphäre-Einstellungen aktiviert."
                 )
         return
+
+    # ---- Hilfe-Ticket Ablauf ----
+    if user_id in hilfe_state:
+        state = hilfe_state[user_id]
+        step = state["step"]
+
+        if step == "email":
+            email_regex = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_regex, text):
+                await update.message.reply_text(
+                    "❌ <b>Ungültige E-Mail-Adresse.</b>\n\n"
+                    "Bitte gib eine gültige E-Mail-Adresse ein:\n"
+                    "<i>Beispiel: name@example.com</i>",
+                    parse_mode=ParseMode.HTML
+                )
+                return
+            state["data"]["email"] = text
+            state["step"] = "grund"
+            await update.message.reply_text(
+                "✅ <b>E-Mail gespeichert.</b>\n\n"
+                "📝 <b>Schritt 2 von 2:</b>\n"
+                "Bitte beschreibe deinen <b>Grund</b> für das Support-Ticket.\n\n"
+                "⚠️ <i>Dein Text muss mindestens <b>50 Zeichen</b> lang sein.</i>",
+                parse_mode=ParseMode.HTML
+            )
+            return
+
+        elif step == "grund":
+            if len(text) < 50:
+                fehlende = 50 - len(text)
+                await update.message.reply_text(
+                    f"❌ <b>Dein Grund ist zu kurz!</b>\n\n"
+                    f"Du hast <b>{len(text)} Zeichen</b> geschrieben.\n"
+                    f"Es fehlen noch <b>{fehlende} Zeichen</b>.\n\n"
+                    f"Bitte schreibe mindestens <b>50 Zeichen</b>, damit wir dir besser helfen können.",
+                    parse_mode=ParseMode.HTML
+                )
+                return
+
+            email = state["data"]["email"]
+            uname = from_user.username or from_user.first_name
+            del hilfe_state[user_id]
+
+            ticket_text = (
+                f"🎫 <b>Neues Support-Ticket</b>\n"
+                f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+                f"👤 <b>Nutzer:</b> @{uname} (ID: <code>{user_id}</code>)\n"
+                f"📧 <b>E-Mail:</b> <code>{email}</code>\n"
+                f"📝 <b>Grund:</b>\n{text}"
+            )
+            try:
+                await context.bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=ticket_text,
+                    parse_mode=ParseMode.HTML
+                )
+            except Exception as e:
+                print(f"❌ Support-Ticket an Admin: {e}")
+
+            await update.message.reply_text(
+                "✅ <b>Dein Support-Ticket wurde erfolgreich eingereicht!</b>\n"
+                "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+                f"📧 <b>E-Mail:</b> <code>{email}</code>\n"
+                f"📝 <b>Dein Grund:</b>\n<i>{text}</i>\n\n"
+                "⏳ Unser Team meldet sich so schnell wie möglich bei dir.\n\n"
+                "Bei dringenden Fragen erreichst du uns auch direkt: @OpaHunter",
+                parse_mode=ParseMode.HTML
+            )
+            return
 
     # ---- Refund-Ablauf ----
     if user_id in refund_state:
@@ -1015,6 +1098,7 @@ def main():
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
     application.add_handler(CommandHandler("bew", bewertungen))
+    application.add_handler(CommandHandler("hilfe", hilfe))
     application.add_handler(CommandHandler("listusers", list_users))
     application.add_handler(CommandHandler("sendcontent", send_content))
     application.add_handler(CommandHandler("invite", invite))
@@ -1032,4 +1116,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-         
