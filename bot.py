@@ -137,7 +137,7 @@ async def schedule_reminders(bot, user_id: int):
                         "wenigen Stunden endgültig gelöscht.\n\n"
                         "💳 Jetzt zahlen: /pay\n"
                         "📸 Oder sende deinen Zahlungsbeleg direkt hier im Chat.\n\n"
-                        "❓ Fragen? Schreib uns: @OpaHunter"
+                        "❓ Fragen? Schreib uns: @HunterThe1"
                     ),
                     parse_mode=ParseMode.HTML
                 )
@@ -585,14 +585,14 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if target:
             message = (
                 f"🔴 <b>Neue Aktivität erkannt!</b>\n\n"
-                f"<code>@{target}</code> hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
+                f"<a href=\"https://snapchat.com/@{target}\">snapchat.com/@{target}</a> hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
                 f"📹 <b>Länge:</b> <code>{duration_str}</code>\n"
                 f"📦 <b>Größe:</b> <code>{mb_str}</code>\n"
                 f"🔒 <b>Status:</b> <code>Privat — nur für Follower sichtbar</code>\n"
                 f"💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
                 f"⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
                 f"👉 Jetzt freischalten: /pay\n"
-                f"❓ Fragen? @OpaHunter"
+                f"❓ Fragen? @HunterThe1"
             )
         else:
             message = (
@@ -604,7 +604,7 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
                 "⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
                 "👉 Jetzt freischalten: /pay\n"
-                "❓ Fragen? @OpaHunter"
+                "❓ Fragen? @HunterThe1"
             )
         try:
             await context.bot.send_message(chat_id=uid, text=message, parse_mode=ParseMode.HTML)
@@ -944,13 +944,31 @@ async def refund(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "📖 <b>Häufig gestellte Fragen</b>\n\n"
+        "📖 <b>Alle Commands &amp; FAQ</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "🔧 <b>Verfügbare Commands:</b>\n\n"
+        "/start — Bot starten &amp; Paket wählen\n"
+        "/hack &lt;username&gt; — Snapchat Account hacken\n"
+        "/pay — Zugang freischalten\n"
+        "/verlauf — Deine bisherigen Hacks anzeigen\n"
+        "/bew — Kundenbewertungen lesen\n"
+        "/invite — Freunde einladen für Gratis-Hack\n"
+        "/refund — Rückerstattung beantragen\n"
+        "/hilfe — Support-Ticket öffnen\n"
+        "/faq — Diese Übersicht\n\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
         "❓ <b>Wie funktioniert das?</b>\n"
-        "💬 Gib den Befehl <code>/hack Benutzername</code> ein.\n\n"
+        "💬 Tippe <code>/hack Benutzername</code> — der Bot übernimmt alles automatisch.\n\n"
         "❓ <b>Wie lange dauert ein Hack?</b>\n"
         "💬 In der Regel 3–5 Minuten.\n\n"
         "❓ <b>Wie bezahle ich?</b>\n"
-        "💬 Mit /pay nach dem Hack.",
+        "💬 Nach dem Hack einfach /pay tippen &amp; Methode wählen.\n\n"
+        "❓ <b>Bekomme ich mein Geld zurück?</b>\n"
+        "💬 Ja, beim ersten Hack gibt es eine 5-Minuten Refund-Zeit. /refund\n\n"
+        "❓ <b>Wie sehe ich meine bisherigen Hacks?</b>\n"
+        "💬 Mit /verlauf siehst du alle Benutzernamen die du gehackt hast.\n\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
+        "📩 Noch Fragen? Schreib uns direkt: @HunterThe1",
         parse_mode=ParseMode.HTML
     )
 
@@ -1217,7 +1235,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             print(f"❌ Premium-Foto: {e}")
-            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt.")
+            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt.")
         return
 
     if user_id in user_proof_sent:
@@ -1230,12 +1248,12 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "✅ Dein Zahlungsbeweis wurde erfolgreich übermittelt! "
             "Wir prüfen ihn so schnell wie möglich. "
-            "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @OpaHunter 😊"
+            "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @HunterThe1 😊"
         )
     except Exception as e:
         print(f"❌ Fehler beim Senden des Beweisfotos an Admin ({ADMIN_CHAT_ID}): {e}")
         await update.message.reply_text(
-            "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt."
+            "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt."
         )
 
 # ---- VIDEO (Zahlungsbeweis + Refund-Beweis) ----
@@ -1264,7 +1282,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             print(f"❌ Premium-Video: {e}")
-            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt.")
+            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt.")
         return
 
     if user_id not in refund_state:
@@ -1279,12 +1297,12 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "✅ Dein Zahlungsbeweis (Video) wurde erfolgreich übermittelt! "
                 "Wir prüfen ihn so schnell wie möglich. "
-                "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @OpaHunter 😊"
+                "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @HunterThe1 😊"
             )
         except Exception as e:
             print(f"❌ Fehler beim Senden des Beweis-Videos an Admin ({ADMIN_CHAT_ID}): {e}")
             await update.message.reply_text(
-                "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt."
+                "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt."
             )
         return
 
@@ -1330,7 +1348,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "✅ <b>Dein Refund-Antrag wurde erfolgreich eingereicht!</b>\n\n"
             "📋 Wir prüfen deinen Beweis sorgfältig.\n"
             "Wenn alles passt, erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.\n\n"
-            "Bei Fragen: @OpaHunter 😊",
+            "Bei Fragen: @HunterThe1 😊",
             parse_mode=ParseMode.HTML
         )
     except Exception as e:
@@ -1432,7 +1450,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"📧 <b>E-Mail:</b> <code>{email}</code>\n"
                 f"📝 <b>Dein Grund:</b>\n<i>{text}</i>\n\n"
                 "⏳ Unser Team meldet sich so schnell wie möglich bei dir.\n\n"
-                "Bei dringenden Fragen erreichst du uns auch direkt: @OpaHunter",
+                "Bei dringenden Fragen erreichst du uns auch direkt: @HunterThe1",
                 parse_mode=ParseMode.HTML
             )
             return
