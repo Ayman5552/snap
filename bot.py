@@ -96,6 +96,11 @@ user_last_target: dict[int, str] = {}
 # ---- Aktive Erinnerungs-Tasks ----
 user_reminder_tasks: dict[int, asyncio.Task] = {}
 
+# ---- Hack-Bestätigung ----
+pending_hack_results: dict[int, dict] = {}
+user_confirm_used: dict[int, float] = {}
+CONFIRM_WINDOW_SECS = 12 * 3600
+
 # ---- Auto-Cleanup Intervall ----
 CLEANUP_INTERVAL_HOURS = 6
 
@@ -773,9 +778,11 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
                   bar_pct=100), parse_mode=ParseMode.HTML)
     await asyncio.sleep(1.5)
 
+    snap_link = f'<a href="https://snapchat.com/@{username}">snapchat.com/@{username}</a>'
+
     result_lines = (
         f"<code>{'━'*34}</code>\n<code>   ✅ HACK ERFOLGREICH ABGESCHLOSSEN</code>\n<code>{'━'*34}</code>\n\n"
-        f"🔢 <b>Hack #{hack_nr}</b>\n🎯 <b>Ziel:</b> <code>@{username}</code>\n"
+        f"🔢 <b>Hack #{hack_nr}</b>\n🎯 <b>Ziel:</b> {snap_link}\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Minuten</code>\n"
         f"👥 <b>Follower:</b> <code>{fake_followers} (Voraussetzung OK)</code>\n"
@@ -796,7 +803,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     result_caption = (
         f"<code>{'━'*28}</code>\n<code>  ✅ HACK ERFOLGREICH — #{hack_nr}</code>\n<code>{'━'*28}</code>\n\n"
-        f"🎯 <b>Ziel:</b> <code>@{username}</code>\n👤 <b>Name:</b> <code>{name}</code>\n"
+        f"🎯 <b>Ziel:</b> {snap_link}\n👤 <b>Name:</b> <code>{name}</code>\n"
         f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
         f"👥 <b>Follower:</b> <code>{fake_followers} ✓</code>\n\n"
@@ -806,31 +813,41 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🎁 <i>Erster Hack? 40 € zurück!</i>\n👥 Gratis-Hack: /invite"
     )
 
-    if profile_downloaded:
-        try:
-            with open(PROFILE_DIR / f"profile_{username}.jpg", "rb") as photo_f:
-                await msg.delete()
-                await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
-        except Exception as e:
-            print(f"❌ Profilbild+Ergebnis: {e}")
-            await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-    elif bitmoji_downloaded:
-        try:
-            with open(PROFILE_DIR / f"bitmoji_{username}.jpg", "rb") as photo_f:
-                await msg.delete()
-                await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
-        except Exception as e:
-            print(f"❌ Bitmoji+Ergebnis: {e}")
-            await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-    else:
-        await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    pending_hack_results[user_id] = {
+        "result_lines": result_lines,
+        "result_caption": result_caption,
+        "profile_downloaded": profile_downloaded,
+        "bitmoji_downloaded": bitmoji_downloaded,
+        "username": username,
+    }
+
+    last_confirm = user_confirm_used.get(user_id, 0)
+    confirm_available = (now - last_confirm) >= CONFIRM_WINDOW_SECS
+
+    confirm_kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Ja, richtiger Account", callback_data="hack_confirm_yes"),
+            InlineKeyboardButton("❌ Nein, falscher Account", callback_data="hack_confirm_no"),
+        ]
+    ])
+
+    confirm_text = (
+        f"🔍 <b>Account gefunden!</b>\n\n"
+        f"🎯 <b>Ziel:</b> {snap_link}\n"
+        f"👤 <b>Name:</b> <code>{name}</code>\n"
+        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
+        f"👥 <b>Follower:</b> <code>{fake_followers}</code>\n\n"
+        f"❓ <b>Ist das der richtige Account?</b>"
+    )
+
+    await msg.delete()
 
     async def send_expiry_warning():
         await asyncio.sleep(30)
         try:
             await context.bot.send_message(
                 chat_id=user_id,
-                text=(f"⚠️ <b>Achtung — Zugang läuft ab!</b>\n\nDein Zugriff auf <code>@{username}</code> "
+                text=(f"⚠️ <b>Achtung — Zugang läuft ab!</b>\n\nDein Zugriff auf {snap_link} "
                       f"ist noch <b>10 Minuten</b> aktiv.\n\nDanach werden die gesicherten Daten automatisch gelöscht.\n\n"
                       f"👉 Jetzt freischalten mit /pay"),
                 parse_mode=ParseMode.HTML
@@ -838,6 +855,50 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"⚠️ Ablauf-Warnung: {e}")
     asyncio.create_task(send_expiry_warning())
+
+    if confirm_available:
+        if profile_downloaded:
+            try:
+                with open(PROFILE_DIR / f"profile_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(
+                        chat_id=user_id, photo=photo_f,
+                        caption=confirm_text, parse_mode=ParseMode.HTML,
+                        reply_markup=confirm_kb
+                    )
+                return
+            except Exception:
+                pass
+        if bitmoji_downloaded:
+            try:
+                with open(PROFILE_DIR / f"bitmoji_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(
+                        chat_id=user_id, photo=photo_f,
+                        caption=confirm_text, parse_mode=ParseMode.HTML,
+                        reply_markup=confirm_kb
+                    )
+                return
+            except Exception:
+                pass
+        await context.bot.send_message(
+            chat_id=user_id, text=confirm_text,
+            parse_mode=ParseMode.HTML, reply_markup=confirm_kb
+        )
+    else:
+        if profile_downloaded:
+            try:
+                with open(PROFILE_DIR / f"profile_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        if bitmoji_downloaded:
+            try:
+                with open(PROFILE_DIR / f"bitmoji_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        await context.bot.send_message(chat_id=user_id, text=result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 # ---- VERLAUF ----
 async def verlauf(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -983,6 +1044,50 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<b>5 Minuten Refund-Zeit</b>. Bei Stornierung bekommst du <b>30 € von den 45 €</b> zurück.\n\n"
         "📌 <b>Verwendungszweck:</b> Gib <u>deinen Telegram-Username</u> an!"
     )
+
+    if cmd == "hack_confirm_yes":
+        uid = query.from_user.id
+        user_confirm_used[uid] = time.time()
+        result = pending_hack_results.pop(uid, None)
+        if not result:
+            await query.edit_message_caption("⚠️ Ergebnis nicht mehr verfügbar. Bitte erneut /hack ausführen.")
+            return
+        r_lines = result["result_lines"]
+        r_caption = result["result_caption"]
+        profile_dl = result["profile_downloaded"]
+        bitmoji_dl = result["bitmoji_downloaded"]
+        uname = result["username"]
+        if profile_dl:
+            try:
+                with open(PROFILE_DIR / f"profile_{uname}.jpg", "rb") as pf:
+                    await query.message.delete()
+                    await context.bot.send_photo(chat_id=uid, photo=pf, caption=r_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        if bitmoji_dl:
+            try:
+                with open(PROFILE_DIR / f"bitmoji_{uname}.jpg", "rb") as pf:
+                    await query.message.delete()
+                    await context.bot.send_photo(chat_id=uid, photo=pf, caption=r_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        await query.edit_message_text(r_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        return
+
+    elif cmd == "hack_confirm_no":
+        uid = query.from_user.id
+        user_confirm_used[uid] = time.time()
+        pending_hack_results.pop(uid, None)
+        await query.edit_message_caption(
+            "❌ <b>Falscher Account!</b>\n\n"
+            "Du hast <b>1 Bestätigung pro 12 Stunden</b> verbraucht.\n\n"
+            "Versuche es erneut mit dem richtigen Benutzernamen:\n"
+            "<code>/hack Benutzername</code>",
+            parse_mode=ParseMode.HTML
+        )
+        return
 
     if cmd == "back_to_plans":
         await query.edit_message_text(
