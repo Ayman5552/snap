@@ -760,7 +760,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_photo(
                 chat_id=ADMIN_CHAT_ID, photo=photo.file_id,
                 caption=forward_text, parse_mode=ParseMode.HTML, reply_markup=approve_kb
-            )
+                            )
             await update.message.reply_text(
                 "✅ <b>Zahlungsbeleg erhalten!</b>\n\n"
                 "Dein Beleg wird gerade geprüft. Du wirst automatisch benachrichtigt, "
@@ -782,10 +782,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📸 Neuer Beweis von @{from_user.username or from_user.first_name} (ID: {user_id})\n\n"
         f"Bildunterschrift:\n{caption}"
     )
+
     try:
         sent = await context.bot.send_photo(
-            chat_id=ADMIN_CHAT_ID, photo=photo.file_id,
-            caption=forward_text, parse_mode=ParseMode.HTML,
+            chat_id=ADMIN_CHAT_ID,
+            photo=photo.file_id,
+            caption=forward_text,
+            parse_mode=ParseMode.HTML,
         )
         forwarded_msg_to_user[sent.message_id] = user_id
         user_proof_sent.add(user_id)
@@ -796,7 +799,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     except Exception as e:
         print(f"❌ Fehler beim Senden des Beweisfotos an Admin ({ADMIN_CHAT_ID}): {e}")
-        await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt.")
+        await update.message.reply_text(
+            "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt."
+        )
 
 # ---- VIDEO (Refund-Beweis) ----
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -805,6 +810,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if user_id == ADMIN_CHAT_ID:
         return
+
     if user_id not in refund_state:
         return
 
@@ -822,26 +828,38 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if method == "bank":
         details = (
-            f"🔄 <b>Refund-Antrag — Banküberweisung</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            f"🔄 <b>Refund-Antrag — Banküberweisung</b>\n"
+            f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             f"👤 <b>Nutzer:</b> @{from_user.username or from_user.first_name} (ID: <code>{user_id}</code>)\n"
             f"🏦 <b>IBAN:</b> <code>{data.get('iban', '—')}</code>\n"
-            f"👤 <b>Kontoinhaber:</b> <code>{data.get('name', '—')}</code>\n💶 <b>Methode:</b> Banküberweisung"
+            f"👤 <b>Kontoinhaber:</b> <code>{data.get('name', '—')}</code>\n"
+            f"💶 <b>Methode:</b> Banküberweisung"
         )
     else:
         details = (
-            f"🔄 <b>Refund-Antrag — PayPal</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+            f"🔄 <b>Refund-Antrag — PayPal</b>\n"
+            f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             f"👤 <b>Nutzer:</b> @{from_user.username or from_user.first_name} (ID: <code>{user_id}</code>)\n"
-            f"📧 <b>PayPal-E-Mail:</b> <code>{data.get('email', '—')}</code>\n💶 <b>Methode:</b> PayPal"
+            f"📧 <b>PayPal-E-Mail:</b> <code>{data.get('email', '—')}</code>\n"
+            f"💶 <b>Methode:</b> PayPal"
         )
 
     try:
-        await context.bot.send_video(chat_id=ADMIN_CHAT_ID, video=video.file_id, caption=details, parse_mode=ParseMode.HTML)
+        file_id = video.file_id
+        await context.bot.send_video(
+            chat_id=ADMIN_CHAT_ID,
+            video=file_id,
+            caption=details,
+            parse_mode=ParseMode.HTML
+        )
         del refund_state[user_id]
         await update.message.reply_text(
             "✅ <b>Dein Refund-Antrag wurde erfolgreich eingereicht!</b>\n\n"
             "📋 Wir prüfen deinen Beweis sorgfältig.\n"
             "Wenn alles passt, erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.\n\n"
-            "Bei Fragen: @OpaHunter 😊", parse_mode=ParseMode.HTML)
+            "Bei Fragen: @OpaHunter 😊",
+            parse_mode=ParseMode.HTML
+        )
     except Exception as e:
         print(f"❌ Refund-Video Fehler: {e}")
         await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal.")
@@ -908,69 +926,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(
                     "✅ E-Mail gespeichert.\n\n"
                     "📹 Sende jetzt bitte ein <b>Beweisvideo deiner Überweisung</b> als Video-Nachricht.\n\n"
-                    "<i>Das Video wird dire **...**
-
-_This response is too long to display in full._
-                # ---- TEXT (Admin-Reply + Paysafe + Refund-Schritte) ----
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message is None:
-        return
-    raw = update.message.text
-    if not raw:
-        return
-    text = raw.strip()
-    from_user = update.message.from_user
-    user_id = from_user.id
-    # ---- Admin: Reply weiterschicken ----
-    if user_id == ADMIN_CHAT_ID:
-        if update.message.reply_to_message:
-            original = update.message.reply_to_message
-            target_id = None
-            if original.forward_from:
-                target_id = original.forward_from.id
-            if not target_id:
-                target_id = forwarded_msg_to_user.get(original.message_id)
-            if target_id:
-                try:
-                    await context.bot.send_message(chat_id=target_id, text=text)
-                    await update.message.reply_text("✅ Nachricht erfolgreich zugestellt.")
-                except Exception as e:
-                    await update.message.reply_text(f"❌ Fehler beim Senden: {e}")
-            else:
-                await update.message.reply_text(
-                    "⚠️ Nutzer-ID nicht erkennbar.\n"
-                    "Der Nutzer hat Privatsphäre-Einstellungen aktiviert."
-                )
-        return
-    # ---- Refund-Ablauf ----
-    if user_id in refund_state:
-        state = refund_state[user_id]
-        step = state["step"]
-        try:
-            if step == "bank_iban":
-                state["data"]["iban"] = text
-                state["step"] = "bank_name"
-                await update.message.reply_text(
-                    "✅ IBAN gespeichert.\n\nBitte gib jetzt den <b>Namen des Kontoinhabers</b> ein:",
-                    parse_mode=ParseMode.HTML
-                )
-                return
-            elif step == "bank_name":
-                state["data"]["name"] = text
-                state["step"] = "bank_video"
-                await update.message.reply_text(
-                    "✅ Name gespeichert.\n\n"
-                    "📹 Sende jetzt bitte ein <b>Beweisvideo deiner Überweisung</b> als Video-Nachricht.\n\n"
-                    "<i>Das Video wird direkt an unser Team weitergeleitet.</i>",
-                    parse_mode=ParseMode.HTML
-                )
-                return
-            elif step == "paypal_email":
-                state["data"]["email"] = text
-                state["step"] = "paypal_video"
-                await update.message.reply_text(
-                    "✅ E-Mail gespeichert.\n\n"
-                    "📹 Sende jetzt bitte ein <b>Beweisvideo deiner Überweisung</b> als Video-Nachricht.\n\n"
                     "<i>Das Video wird direkt an unser Team weitergeleitet.</i>",
                     parse_mode=ParseMode.HTML
                 )
@@ -979,6 +934,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"❌ Refund-Schritt Fehler: {e}")
             await update.message.reply_text("⚠️ Fehler beim Speichern. Bitte nochmal eingeben.")
             return
+
     # ---- Paysafe-Code ----
     paysafe_pattern = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{4}$")
     if paysafe_pattern.match(text):
@@ -990,7 +946,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"<code>{text}</code>"
         )
         try:
-            sent = await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=msg, parse_mode=ParseMode.HTML)
+            sent = await context.bot.send_message(
+                chat_id=ADMIN_CHAT_ID,
+                text=msg,
+                parse_mode=ParseMode.HTML,
+            )
             forwarded_msg_to_user[sent.message_id] = user_id
             user_proof_sent.add(user_id)
             await update.message.reply_text(
@@ -998,18 +958,25 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             print(f"❌ Paysafe-Code: {e}")
+
 # ---- ADMIN: /sendcontent ----
 async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_CHAT_ID:
         return
     await update.message.reply_text("Hinweis: Automatisches Versenden von Preview-Medien ist deaktiviert.")
+
 # ---- INVITE / REDEEM / FAQ ----
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n🔗 https://t.me/+o5LA7bbv0E8zZDdh",
-        parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
+        "🔗 https://t.me/+o5LA7bbv0E8zZDdh",
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
+    )
+
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Das Einlösen von Credits ist aktuell nicht verfügbar.")
+
 # ---- REFUND ----
 async def refund(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -1017,23 +984,33 @@ async def refund(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("💸 PayPal", callback_data="refund_paypal")],
     ]
     await update.message.reply_text(
-        "💰 <b>Rückerstattung beantragen</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "💰 <b>Rückerstattung beantragen</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
         "Bitte wähle deine bevorzugte Auszahlungsmethode:\n\n"
         "⚠️ <b>Wichtig:</b> Du musst vorab ein <u>Beweisvideo deiner Überweisung</u> einschicken.\n"
         "Nach erfolgreicher Prüfung erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.",
-        parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard))
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
 async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📖 <b>Häufig gestellte Fragen</b>\n\n"
-        "❓ <b>Wie funktioniert das?</b>\n💬 Gib den Befehl <code>/hack Benutzername</code> ein.\n\n"
-        "❓ <b>Wie lange dauert ein Hack?</b>\n💬 In der Regel 3–5 Minuten.\n\n"
-        "❓ <b>Wie bezahle ich?</b>\n💬 Mit /pay nach dem Hack.",
-        parse_mode=ParseMode.HTML)
+        "❓ <b>Wie funktioniert das?</b>\n"
+        "💬 Gib den Befehl <code>/hack Benutzername</code> ein.\n\n"
+        "❓ <b>Wie lange dauert ein Hack?</b>\n"
+        "💬 In der Regel 3–5 Minuten.\n\n"
+        "❓ <b>Wie bezahle ich?</b>\n"
+        "💬 Mit /pay nach dem Hack.",
+        parse_mode=ParseMode.HTML
+    )
+
 # ---- MAIN ----
 def main():
     print("🚀 Bot startet...")
     keep_alive()
     application = ApplicationBuilder().token(TOKEN).build()
+
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
@@ -1049,7 +1026,10 @@ def main():
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
     print("✅ Bot läuft!")
     application.run_polling(drop_pending_updates=True)
+
 if __name__ == "__main__":
     main()
+         
