@@ -1047,8 +1047,7 @@ BEWERTUNGEN = [
 async def bewertungen(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         import random
-        auswahl = random.sample(BEWERTUNGEN,
-                5)
+        auswahl = random.sample(BEWERTUNGEN,     5)
         sterne_map = ["⭐⭐⭐⭐☆", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"]
         random.shuffle(sterne_map)
         gesamt = get_hack_count()
