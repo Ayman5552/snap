@@ -579,12 +579,15 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         mins = total_secs // 60
         secs = total_secs % 60
         duration_str = f"{mins}:{secs:02d} Min." if mins > 0 else f"0:{secs:02d} Min."
+        mb_size = round(total_secs * randint(80, 250) / 1000, 1)
+        mb_str = f"{mb_size} MB"
 
         if target:
             message = (
                 f"🔴 <b>Neue Aktivität erkannt!</b>\n\n"
                 f"<code>@{target}</code> hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
                 f"📹 <b>Länge:</b> <code>{duration_str}</code>\n"
+                f"📦 <b>Größe:</b> <code>{mb_str}</code>\n"
                 f"🔒 <b>Status:</b> <code>Privat — nur für Follower sichtbar</code>\n"
                 f"💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
                 f"⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
@@ -596,6 +599,7 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🔴 <b>Neue Aktivität erkannt!</b>\n\n"
                 "Das gehackte Konto hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
                 f"📹 <b>Länge:</b> <code>{duration_str}</code>\n"
+                f"📦 <b>Größe:</b> <code>{mb_str}</code>\n"
                 f"🔒 <b>Status:</b> <code>Privat — nur für Follower sichtbar</code>\n"
                 "💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
                 "⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
