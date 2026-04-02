@@ -614,7 +614,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🏦 <b>Banküberweisung</b>\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "📋 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
-            "🏛 <b>IBAN:</b> <code>IE32 PPSE 9903 8091 8899 18</code>\n"
+            "🏛 <b>IBAN:</b> <code>LT62 3130 0101 0634 0669</code>\n"
             "💶 <b>Betrag:</b> <code>45,00 EUR</code>\n\n"
             "ℹ️ Tippe auf IBAN zum Kopieren.\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n"
