@@ -803,7 +803,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     result_caption = (
         f"<code>{'━'*28}</code>\n<code>  ✅ HACK ERFOLGREICH — #{hack_nr}</code>\n<code>{'━'*28}</code>\n\n"
-        f"🎯 <b>Ziel:</b> <code>@{username}</code>\n👤 <b>Name:</b> <code>{name}</code>\n"
         f"🎯 <b>Ziel:</b> {snap_link}\n👤 <b>Name:</b> <code>{name}</code>\n"
         f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
@@ -814,24 +813,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🎁 <i>Erster Hack? 40 € zurück!</i>\n👥 Gratis-Hack: /invite"
     )
 
-    if profile_downloaded:
-        try:
-            with open(PROFILE_DIR / f"profile_{username}.jpg", "rb") as photo_f:
-                await msg.delete()
-                await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
-        except Exception as e:
-            print(f"❌ Profilbild+Ergebnis: {e}")
-            await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-    elif bitmoji_downloaded:
-        try:
-            with open(PROFILE_DIR / f"bitmoji_{username}.jpg", "rb") as photo_f:
-                await msg.delete()
-                await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
-        except Exception as e:
-            print(f"❌ Bitmoji+Ergebnis: {e}")
-            await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-    else:
-        await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     pending_hack_results[user_id] = {
         "result_lines": result_lines,
         "result_caption": result_caption,
@@ -866,7 +847,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await context.bot.send_message(
                 chat_id=user_id,
-                text=(f"⚠️ <b>Achtung — Zugang läuft ab!</b>\n\nDein Zugriff auf <code>@{username}</code> "
                 text=(f"⚠️ <b>Achtung — Zugang läuft ab!</b>\n\nDein Zugriff auf {snap_link} "
                       f"ist noch <b>10 Minuten</b> aktiv.\n\nDanach werden die gesicherten Daten automatisch gelöscht.\n\n"
                       f"👉 Jetzt freischalten mit /pay"),
