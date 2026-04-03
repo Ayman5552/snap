@@ -376,7 +376,7 @@ PACKAGE_TEXT = (
 
 def main_menu_text(plan: str) -> str:
     if plan == "premium":
-        paket_info = "💎 <b>Paket:</b> <code>PREMIUM — 2 Hacks/Woche (95 €/Monat)</code>\n\n"
+        paket_info = "💎 <b>Paket:</b> <code>PREMIUM — 6 Hacks/Monat (95 €/Monat)</code>\n\n"
     else:
         paket_info = "📦 <b>Paket:</b> <code>BASIC — 45 € pro Hack</code>\n\n"
     return (
@@ -695,21 +695,38 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     now = time.time()
-    recent = [t for t in user_hack_times.get(user_id, []) if now - t < HACK_WINDOW_SECS]
-    if len(recent) >= HACK_LIMIT:
-        next_allowed = recent[0] + HACK_WINDOW_SECS
-        remaining = next_allowed - now
-        wait_h = int(remaining // 3600)
-        wait_m = int((remaining % 3600) // 60)
-        await update.message.reply_text(
-            "⛔ <b>Tages-Limit erreicht!</b>\n\n"
-            "Du hast bereits <b>2 Benutzernamen</b> in den letzten 12 Stunden überprüft.\n\n"
-            f"⏳ Bitte warte noch <b>{wait_h} Stunde(n) {wait_m} Minute(n)</b>, "
-            f"dann stehen dir neue Hacks zur Verfügung.\n\n"
-            "💎 Mit dem <b>PREMIUM-Paket</b> bekommst du 2 Hacks pro Woche — jetzt upgraden mit /start",
-            parse_mode=ParseMode.HTML
-        )
-        return
+    if user_plan.get(user_id) == "premium":
+        prem_window = 30 * 24 * 3600
+        prem_limit = 6
+        recent = [t for t in user_hack_times.get(user_id, []) if now - t < prem_window]
+        if len(recent) >= prem_limit:
+            next_allowed = recent[0] + prem_window
+            remaining = next_allowed - now
+            wait_d = int(remaining // 86400)
+            wait_h = int((remaining % 86400) // 3600)
+            await update.message.reply_text(
+                "⛔ <b>Monatslimit erreicht!</b>\n\n"
+                "Du hast deine <b>6 Hacks diesen Monat</b> bereits verbraucht.\n\n"
+                f"⏳ Bitte warte noch <b>{wait_d} Tag(e) {wait_h} Stunde(n)</b>.\n\n"
+                "🔄 Nächsten Monat stehen dir wieder 6 Hacks zur Verfügung.",
+                parse_mode=ParseMode.HTML
+            )
+            return
+    else:
+        recent = [t for t in user_hack_times.get(user_id, []) if now - t < HACK_WINDOW_SECS]
+        if len(recent) >= HACK_LIMIT:
+            next_allowed = recent[0] + HACK_WINDOW_SECS
+            remaining = next_allowed - now
+            wait_h = int(remaining // 3600)
+            wait_m = int((remaining % 3600) // 60)
+            await update.message.reply_text(
+                "⛔ <b>Tages-Limit erreicht!</b>\n\n"
+                "Du hast bereits dein <b>Hack-Limit</b> erreicht.\n\n"
+                f"⏳ Bitte warte noch <b>{wait_h} Stunde(n) {wait_m} Minute(n)</b>.\n\n"
+                "💎 Mit dem <b>PREMIUM-Paket</b> bekommst du 6 Hacks pro Monat — jetzt upgraden mit /start",
+                parse_mode=ParseMode.HTML
+            )
+            return
 
     if not context.args:
         await update.message.reply_text(
