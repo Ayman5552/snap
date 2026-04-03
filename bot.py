@@ -367,7 +367,8 @@ PACKAGE_TEXT = (
     "• Zugriff auf alle Inhalte\n"
     "• Sofortzugang nach Zahlung\n\n"
     "💎 <b>PREMIUM — 95 € / Monat</b>\n"
-    "• 2 Hacks pro Woche\n"
+    "• 6 Hacks pro Monat\n"
+    "• 1 Vorschauvideo + 1 Foto vor jedem Hack\n"
     "• Prioritäts-Support\n"
     "• Exklusiver Dauerzugang\n\n"
     "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
@@ -1297,11 +1298,41 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text=(
                     "✅ <b>Dein Premium-Zugang wurde freigeschaltet!</b>\n\n"
                     "💎 Du hast jetzt vollen Zugriff auf alle Features.\n\n"
+                    "🎁 Als Vorschau erhältst du gleich <b>1 Foto + 1 Video</b> aus einem gehackten Konto.\n\n"
                     "🚀 Starte deinen ersten Hack mit:\n"
                     "<code>/hack Benutzername</code>"
                 ),
                 parse_mode=ParseMode.HTML
             )
+            imgs = [f for f in IMAGE_DIR.glob("*.*") if f.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.webp') and f.name != '.gitkeep']
+            vids = [f for f in VIDEO_DIR.glob("*.*") if f.suffix.lower() in ('.mp4', '.mov', '.avi') and f.name != '.gitkeep']
+            if imgs:
+                import random
+                img_path = random.choice(imgs)
+                preview_img = TEMP_DIR / f"preview_img_{target_uid}.jpg"
+                if await asyncio.to_thread(censor_image, img_path, preview_img):
+                    try:
+                        with open(preview_img, "rb") as pf:
+                            await context.bot.send_photo(
+                                chat_id=target_uid, photo=pf,
+                                caption="🖼 <b>Vorschau-Foto</b> (aus gehacktem Konto — zensiert)\n🔓 Nach dem Hack siehst du alles.",
+                                parse_mode=ParseMode.HTML
+                            )
+                    except Exception as e:
+                        print(f"❌ Preview-Foto: {e}")
+            if vids:
+                vid_path = random.choice(vids)
+                preview_vid = TEMP_DIR / f"preview_vid_{target_uid}.mp4"
+                if await asyncio.to_thread(censor_video, vid_path, preview_vid):
+                    try:
+                        with open(preview_vid, "rb") as vf:
+                            await context.bot.send_video(
+                                chat_id=target_uid, video=vf,
+                                caption="📹 <b>Vorschau-Video</b> (aus gehacktem Konto — zensiert)\n🔓 Nach dem Hack siehst du alles.",
+                                parse_mode=ParseMode.HTML
+                            )
+                    except Exception as e:
+                        print(f"❌ Preview-Video: {e}")
         except Exception as e:
             print(f"❌ Premium-Benachrichtigung: {e}")
         await query.edit_message_reply_markup(reply_markup=None)
