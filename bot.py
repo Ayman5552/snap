@@ -157,8 +157,13 @@ async def schedule_reminders(bot, user_id: int):
                         "Hey! Du hast vor Kurzem ein Paket ausgewählt, aber noch keine "
                         "Zahlung abgeschlossen.\n\n"
                         "📂 Deine gesicherten Daten werden in Kürze automatisch gelöscht.\n\n"
+                        "🔥 <b>Was du freischaltest:</b>\n"
+                        "• 6 Hacks pro Monat\n"
+                        "• Vorschaufoto + Vorschauvideo vor jedem Hack\n"
+                        "• Prioritäts-Support\n\n"
                         "👉 Jetzt freischalten mit /pay\n\n"
-                        "🔒 Alle Zahlungen sind sicher &amp; anonym."
+                        "🔒 Alle Zahlungen sind sicher &amp; anonym.\n\n"
+                        "❓ Fragen? Einfach <b>/hilfe</b> eingeben — wir antworten schnellstmöglich!"
                     ),
                     parse_mode=ParseMode.HTML
                 )
@@ -174,9 +179,13 @@ async def schedule_reminders(bot, user_id: int):
                         "Wir haben noch keinen Zahlungsbeleg von dir erhalten.\n\n"
                         "💾 Die gesicherten Inhalte des gehackten Kontos werden in "
                         "wenigen Stunden endgültig gelöscht.\n\n"
+                        "🔥 <b>Das bekommst du mit dem Paket:</b>\n"
+                        "• 6 Hacks pro Monat\n"
+                        "• Vorschaufoto + Vorschauvideo vor jedem Hack\n"
+                        "• Prioritäts-Support\n\n"
                         "💳 Jetzt zahlen: /pay\n"
                         "📸 Oder sende deinen Zahlungsbeleg direkt hier im Chat.\n\n"
-                        "❓ Fragen? Schreib uns: @HunterThe1"
+                        "❓ Fragen? Einfach <b>/hilfe</b> eingeben — wir antworten schnellstmöglich!"
                     ),
                     parse_mode=ParseMode.HTML
                 )
@@ -196,12 +205,17 @@ async def schedule_premium_reminder(bot, user_id: int):
                         "💎 <b>Dein Premium-Zugang wartet auf dich!</b>\n\n"
                         "Du hast das PREMIUM-Paket ausgewählt, aber noch keinen "
                         "Zahlungsbeleg eingeschickt.\n\n"
+                        "🔥 <b>Was du bekommst:</b>\n"
+                        "• 6 Hacks pro Monat\n"
+                        "• Vorschaufoto + Vorschauvideo vor jedem Hack\n"
+                        "• Prioritäts-Support\n\n"
                         "📸 Sende einfach ein Foto oder Video deiner Überweisung "
                         "direkt hier im Chat — dann schalten wir dich sofort frei.\n\n"
                         "🏦 <b>IBAN:</b> <code>LT62 3130 0101 0634 0669</code>\n"
                         "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
                         "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
-                        "⏳ Dein Platz ist noch reserviert!"
+                        "⏳ Dein Platz ist noch reserviert!\n\n"
+                        "❓ Fragen? Einfach <b>/hilfe</b> eingeben — wir antworten schnellstmöglich!"
                     ),
                     parse_mode=ParseMode.HTML
                 )
@@ -511,10 +525,11 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif len(parts) == 2:
             uid_s, uname_s, fname_s = parts[0], parts[1], ""
         else:
-            uid_s = parts[0].split()[0] if parts[0].split() else parts[0]
-            uname_s = parts[0].split()[1] if len(parts[0].split()) > 1 else ""
+            uid_s = parts[0].strip()
+            uname_s = ""
             fname_s = ""
-        if uid_s in seen_ids:
+        uid_s = uid_s.strip()
+        if not uid_s or uid_s in seen_ids:
             continue
         seen_ids.add(uid_s)
         if fname_s.strip() and uname_s.strip():
@@ -527,7 +542,8 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
             display = ""
         line_out = f"{display} — ID: {uid_s}" if display else f"ID: {uid_s}"
         entries.append(line_out)
-    text = "📋 <b>Gespeicherte Nutzer:</b>\n\n" + "\n".join(entries)
+
+    text = f"📋 <b>Gespeicherte Nutzer ({len(entries)}):</b>\n\n" + "\n".join(entries)
     await update.message.reply_text(text, parse_mode="HTML")
 
 # ---- ADMIN: /send ----
