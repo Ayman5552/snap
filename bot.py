@@ -524,7 +524,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     failed = 0
 
     for line in lines:
-        parts = line.strip().split()
+        parts = line.strip().split("|")  # FIX: war split(), jetzt split("|")
         if not parts:
             continue
         try:
@@ -557,7 +557,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open(USERS_FILE, "r", encoding="utf-8") as f:
             seen = set()
             for line in f:
-                parts = line.strip().split()
+                parts = line.strip().split("|")
                 if parts:
                     try:
                         seen.add(int(parts[0]))
@@ -602,7 +602,7 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     failed = 0
 
     for line in lines:
-        parts = line.strip().split()
+        parts = line.strip().split("|")  # FIX: war split(), jetzt split("|")
         if not parts:
             continue
         try:
@@ -744,7 +744,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = context.args[0]
     user_last_target[user_id] = username
 
-    # Hack-Verlauf speichern
     if user_id not in user_hack_history:
         user_hack_history[user_id] = []
     user_hack_history[user_id].append(username)
@@ -1497,18 +1496,19 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await _forward_proof_photo(context, from_user, photo.file_id, caption, is_premium=False)
         user_proof_sent.add(user_id)
+        if user_id in user_reminder_tasks:
+            user_reminder_tasks[user_id].cancel()
         await update.message.reply_text(
-            "✅ Dein Zahlungsbeweis wurde erfolgreich übermittelt! "
-            "Wir prüfen ihn so schnell wie möglich. "
-            "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @HunterThe1 😊"
+            "✅ <b>Zahlungsbeweis erhalten!</b>\n\n"
+            "Dein Beweis wird geprüft. Du erhältst in Kürze Zugang zu den Inhalten.\n\n"
+            "<i>In der Regel dauert das nur wenige Minuten.</i> 😊",
+            parse_mode=ParseMode.HTML
         )
     except Exception as e:
-        print(f"❌ Fehler beim Senden des Beweisfotos an Admin ({ADMIN_CHAT_ID}): {e}")
-        await update.message.reply_text(
-            "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt."
-        )
+        print(f"❌ Foto-Weiterleitung: {e}")
+        await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal.")
 
-# ---- VIDEO (Zahlungsbeweis + Refund-Beweis) ----
+# ---- VIDEO (Zahlungsbeweis / Refund) ----
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
@@ -1517,16 +1517,52 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     video = update.message.video or update.message.document
+    if not video:
+        return
     caption = update.message.caption or ""
 
-    if user_id in premium_pending:
-        if not video:
-            await update.message.reply_text("⚠️ Bitte sende das Video als Video-Nachricht.")
+    if user_id in refund_state:
+        state = refund_state[user_id]
+        step = state.get("step")
+        if step in ("bank_video", "paypal_video"):
+            method = state.get("method", "unbekannt")
+            data = state.get("data", {})
+            label = user_label(from_user)
+            if method == "bank":
+                refund_info = f"🏦 IBAN: {data.get('iban', '?')}\n👤 Inhaber: {data.get('name', '?')}"
+            else:
+                refund_info = f"💸 PayPal-E-Mail: {data.get('email', '?')}"
+            admin_text = (
+                f"💸 <b>Refund-Antrag</b>\n\n"
+                f"👤 Nutzer: {label}\n"
+                f"💳 Methode: {method.upper()}\n"
+                f"{refund_info}"
+            )
+            try:
+                await context.bot.send_video(
+                    chat_id=ADMIN_CHAT_ID,
+                    video=video.file_id,
+                    caption=admin_text,
+                    parse_mode=ParseMode.HTML
+                )
+                del refund_state[user_id]
+                await update.message.reply_text(
+                    "✅ <b>Dein Refund-Antrag wurde erfolgreich eingereicht!</b>\n\n"
+                    "📋 Wir prüfen deinen Beweis sorgfältig.\n"
+                    "Wenn alles passt, erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.\n\n"
+                    "Bei Fragen: @HunterThe1 😊",
+                    parse_mode=ParseMode.HTML
+                )
+            except Exception as e:
+                print(f"❌ Refund-Video Fehler: {e}")
+                await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal.")
             return
+
+    if user_id in premium_pending:
         try:
             await _forward_proof_video(context, from_user, video.file_id, caption, is_premium=True)
             await update.message.reply_text(
-                "✅ <b>Zahlungsbeleg (Video) erhalten!</b>\n\n"
+                "✅ <b>Zahlungsbeleg erhalten!</b>\n\n"
                 "Dein Beleg wird gerade geprüft. Du wirst automatisch benachrichtigt, "
                 "sobald dein Premium-Zugang freigeschaltet wurde.\n\n"
                 "<i>Das dauert in der Regel nur wenige Minuten.</i>",
@@ -1537,74 +1573,23 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt.")
         return
 
-    if user_id not in refund_state:
-        if not video:
-            return
-        if user_id in user_proof_sent:
-            await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
-            return
-        try:
-            await _forward_proof_video(context, from_user, video.file_id, caption, is_premium=False)
-            user_proof_sent.add(user_id)
-            await update.message.reply_text(
-                "✅ Dein Zahlungsbeweis (Video) wurde erfolgreich übermittelt! "
-                "Wir prüfen ihn so schnell wie möglich. "
-                "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @HunterThe1 😊"
-            )
-        except Exception as e:
-            print(f"❌ Fehler beim Senden des Beweis-Videos an Admin ({ADMIN_CHAT_ID}): {e}")
-            await update.message.reply_text(
-                "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt."
-            )
+    if user_id in user_proof_sent:
+        await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
         return
-
-    state = refund_state[user_id]
-    if state["step"] not in ("bank_video", "paypal_video"):
-        return
-
-    if not video:
-        await update.message.reply_text("⚠️ Bitte sende das Video als Video-Nachricht (nicht als Datei).")
-        return
-
-    method = state["method"]
-    data = state["data"]
-    label = user_label(from_user)
-
-    if method == "bank":
-        details = (
-            f"🔄 <b>Refund-Antrag — Banküberweisung</b>\n"
-            f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-            f"👤 <b>Nutzer:</b> {label}\n"
-            f"🏦 <b>IBAN:</b> <code>{data.get('iban', '—')}</code>\n"
-            f"👤 <b>Kontoinhaber:</b> <code>{data.get('name', '—')}</code>\n"
-            f"💶 <b>Methode:</b> Banküberweisung"
-        )
-    else:
-        details = (
-            f"🔄 <b>Refund-Antrag — PayPal</b>\n"
-            f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-            f"👤 <b>Nutzer:</b> {label}\n"
-            f"📧 <b>PayPal-E-Mail:</b> <code>{data.get('email', '—')}</code>\n"
-            f"💶 <b>Methode:</b> PayPal"
-        )
 
     try:
-        await context.bot.send_video(
-            chat_id=ADMIN_CHAT_ID,
-            video=video.file_id,
-            caption=details,
-            parse_mode=ParseMode.HTML
-        )
-        del refund_state[user_id]
+        await _forward_proof_video(context, from_user, video.file_id, caption, is_premium=False)
+        user_proof_sent.add(user_id)
+        if user_id in user_reminder_tasks:
+            user_reminder_tasks[user_id].cancel()
         await update.message.reply_text(
-            "✅ <b>Dein Refund-Antrag wurde erfolgreich eingereicht!</b>\n\n"
-            "📋 Wir prüfen deinen Beweis sorgfältig.\n"
-            "Wenn alles passt, erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.\n\n"
-            "Bei Fragen: @HunterThe1 😊",
+            "✅ <b>Zahlungsbeweis erhalten!</b>\n\n"
+            "Dein Beweis wird geprüft. Du erhältst in Kürze Zugang zu den Inhalten.\n\n"
+            "<i>In der Regel dauert das nur wenige Minuten.</i> 😊",
             parse_mode=ParseMode.HTML
         )
     except Exception as e:
-        print(f"❌ Refund-Video Fehler: {e}")
+        print(f"❌ Video-Weiterleitung: {e}")
         await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal.")
 
 # ---- TEXT (Admin-Reply + Paysafe + Refund-Schritte + Hilfe-Ticket) ----
