@@ -484,9 +484,14 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if uid_s in seen_ids:
             continue
         seen_ids.add(uid_s)
-        display = fname_s.strip() if fname_s.strip() else (f"@{uname_s}" if uname_s.strip() else "")
-        if display and uname_s.strip() and fname_s.strip():
+        if fname_s.strip() and uname_s.strip():
             display = f"{fname_s.strip()} (@{uname_s.strip()})"
+        elif fname_s.strip():
+            display = fname_s.strip()
+        elif uname_s.strip():
+            display = f"@{uname_s.strip()}"
+        else:
+            display = ""
         line_out = f"{display} — ID: {uid_s}" if display else f"ID: {uid_s}"
         entries.append(line_out)
     text = "📋 <b>Gespeicherte Nutzer:</b>\n\n" + "\n".join(entries)
