@@ -108,6 +108,10 @@ CLEANUP_INTERVAL_HOURS = 6
 def user_label(from_user) -> str:
     if from_user.username:
         return f"@{from_user.username}"
+    name_parts = [from_user.first_name or "", from_user.last_name or ""]
+    full_name = " ".join(p for p in name_parts if p).strip()
+    if full_name:
+        return full_name
     return f"ID: {from_user.id}"
 
 # ---- Automatische Erinnerungen ----
@@ -702,49 +706,21 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session_token = fake_token()
     last_seen_min = randint(14, 40)
     neue_inhalte = randint(2, 6)
-    fake_followers = randint(800, 17900)
-
-    def build_log(*lines, bar_pct: int) -> str:
-        body = "\n".join(f"<code>{l}</code>" for l in lines)
-        return f"{body}\n<code>{progress_bar(bar_pct)}</code>"
 
     msg = await update.message.reply_text(
-        build_log(f"[ SYSTEM ] Initialisiere Verbindung...", f"[ NET    ] SRC: {ip_src} → DST: {ip_dst}",
-                  f"[ AUTH  ] Session-Token wird generiert...", bar_pct=0), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
-
-    await msg.edit_text(
-        build_log(f"[ SYSTEM ] Verbindung aufgebaut          ✓", f"[ NET    ] SRC: {ip_src} → DST: {ip_dst}",
-                  f"[ AUTH  ] Token: {session_token}  ✓", f"[ SCAN  ] Starte Ziel-Analyse: @{username}...",
-                  bar_pct=15), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
+        "<code>[ SCAN  ] Überprüfe Ziel-Profil...</code>",
+        parse_mode=ParseMode.HTML
+    )
 
     exists, name, bitmoji_url, profile_photo_url = await asyncio.to_thread(extract_snapchat_profile_data, username)
 
     if not exists:
         await msg.edit_text(
-            build_log(f"[ SCAN  ] Ziel-Analyse: @{username}", f"[ ERROR ] Konto nicht gefunden oder privat gesperrt.",
-                      f"[ INFO  ] Prüfe ob der Username korrekt ist.", bar_pct=100), parse_mode=ParseMode.HTML)
+            "<code>[ ERROR ] Konto nicht gefunden oder privat gesperrt.\n"
+            "[ INFO  ] Prüfe ob der Username korrekt ist.</code>",
+            parse_mode=ParseMode.HTML
+        )
         return
-
-    await msg.edit_text(
-        build_log(f"[ SYSTEM ] Verbindung aufgebaut          ✓", f"[ AUTH  ] Token: {session_token}  ✓",
-                  f"[ SCAN  ] Profil gefunden: {name}        ✓", f"[ CHECK ] Voraussetzungen werden geprüft...",
-                  bar_pct=30), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
-
-    await msg.edit_text(
-        build_log(f"[ SCAN  ] Profil gefunden: {name}        ✓",
-                  f"[ CHECK ] Letzter Login: vor {last_seen_min} Min.    ✓",
-                  f"[ CHECK ] Follower: {fake_followers} (&lt; 18.000)      ✓",
-                  f"[ BYPASS] Snapchat SSL-Pinning...", bar_pct=40), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
-
-    await msg.edit_text(
-        build_log(f"[ SCAN  ] Profil gefunden: {name}        ✓", f"[ CHECK ] Voraussetzungen OK              ✓",
-                  f"[ BYPASS] Snapchat SSL-Pinning...        ✓", f"[ BYPASS] 2FA Firewall...                ✓",
-                  f"[ EXFIL ] Extrahiere Account-Daten...", bar_pct=55), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
 
     bitmoji_downloaded = False
     profile_downloaded = False
@@ -757,27 +733,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     videos = randint(7, 8)
     user_content_counts[user_id] = {"bilder": bilder, "videos": videos}
 
-    await msg.edit_text(
-        build_log(f"[ SCAN  ] Profil gefunden: {name}        ✓", f"[ BYPASS] SSL-Pinning + 2FA umgangen     ✓",
-                  f"[ EXFIL ] Account-Daten extrahiert       ✓",
-                  f"[ MEDIA ] {bilder} Bilder + {videos} Videos gefunden  ✓",
-                  f"[ SYNC  ] Lade Inhalte in sicheren Server...", bar_pct=70), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
-
-    await msg.edit_text(
-        build_log(f"[ SCAN  ] Profil gefunden: {name}        ✓", f"[ BYPASS] SSL-Pinning + 2FA umgangen     ✓",
-                  f"[ EXFIL ] Account-Daten extrahiert       ✓",
-                  f"[ MEDIA ] {bilder} Bilder + {videos} Videos gesichert ✓",
-                  f"[ SYNC  ] Upload läuft... ({bilder + videos} Dateien)", bar_pct=88), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
-
-    await msg.edit_text(
-        build_log(f"[ BYPASS] SSL-Pinning + 2FA umgangen     ✓", f"[ EXFIL ] Account-Daten extrahiert       ✓",
-                  f"[ MEDIA ] {bilder} Bilder + {videos} Videos gesichert ✓",
-                  f"[ SYNC  ] Upload abgeschlossen            ✓", f"[ FINAL ] Erstelle Zugangslink...",
-                  bar_pct=100), parse_mode=ParseMode.HTML)
-    await asyncio.sleep(1.5)
-
     snap_link = f'<a href="https://snapchat.com/@{username}">snapchat.com/@{username}</a>'
 
     result_lines = (
@@ -785,7 +740,6 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔢 <b>Hack #{hack_nr}</b>\n🎯 <b>Ziel:</b> {snap_link}\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Minuten</code>\n"
-        f"👥 <b>Follower:</b> <code>{fake_followers} (Voraussetzung OK)</code>\n"
         f"📅 <b>Diese Woche neu:</b> <code>{neue_inhalte} Dateien (privat)</code>\n\n"
         f"📂 <b>Gesicherte Inhalte:</b>\n  🖼 <code>{bilder} Bilder (18+ markiert)</code>\n"
         f"  📹 <code>{videos} Videos (privat)</code>\n"
@@ -805,8 +759,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"<code>{'━'*28}</code>\n<code>  ✅ HACK ERFOLGREICH — #{hack_nr}</code>\n<code>{'━'*28}</code>\n\n"
         f"🎯 <b>Ziel:</b> {snap_link}\n👤 <b>Name:</b> <code>{name}</code>\n"
         f"🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
-        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
-        f"👥 <b>Follower:</b> <code>{fake_followers} ✓</code>\n\n"
+        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n\n"
         f"📂 <b>Gesicherte Inhalte:</b>\n  🖼 <code>{bilder} Bilder (18+)</code>\n"
         f"  📹 <code>{videos} Videos (privat)</code>\n  📸 <code>Profilbild gesichert ✅</code>\n\n"
         f"<code>{'━'*28}</code>\n💰 <b>Zugang freischalten: 45 €</b>\n👉 /pay\n"
@@ -819,6 +772,15 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "profile_downloaded": profile_downloaded,
         "bitmoji_downloaded": bitmoji_downloaded,
         "username": username,
+        "ip_src": ip_src,
+        "ip_dst": ip_dst,
+        "session_token": session_token,
+        "name": name,
+        "bilder": bilder,
+        "videos": videos,
+        "last_seen_min": last_seen_min,
+        "neue_inhalte": neue_inhalte,
+        "hack_nr": hack_nr,
     }
 
     last_confirm = user_confirm_used.get(user_id, 0)
@@ -835,8 +797,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔍 <b>Account gefunden!</b>\n\n"
         f"🎯 <b>Ziel:</b> {snap_link}\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n"
-        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n"
-        f"👥 <b>Follower:</b> <code>{fake_followers}</code>\n\n"
+        f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Min.</code>\n\n"
         f"❓ <b>Ist das der richtige Account?</b>"
     )
 
@@ -1050,17 +1011,125 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_confirm_used[uid] = time.time()
         result = pending_hack_results.pop(uid, None)
         if not result:
-            await query.edit_message_caption("⚠️ Ergebnis nicht mehr verfügbar. Bitte erneut /hack ausführen.")
+            try:
+                await query.edit_message_caption("⚠️ Ergebnis nicht mehr verfügbar. Bitte erneut /hack ausführen.")
+            except Exception:
+                await query.edit_message_text("⚠️ Ergebnis nicht mehr verfügbar. Bitte erneut /hack ausführen.")
             return
+
+        ip_src = result.get("ip_src", fake_ip())
+        ip_dst = result.get("ip_dst", fake_ip())
+        session_token = result.get("session_token", fake_token())
+        name = result.get("name", "Unbekannt")
+        bilder = result.get("bilder", 10)
+        videos = result.get("videos", 7)
+        last_seen_min = result.get("last_seen_min", 20)
         r_lines = result["result_lines"]
         r_caption = result["result_caption"]
         profile_dl = result["profile_downloaded"]
         bitmoji_dl = result["bitmoji_downloaded"]
         uname = result["username"]
+
+        def build_log(*lines, bar_pct: int) -> str:
+            body = "\n".join(f"<code>{l}</code>" for l in lines)
+            return f"{body}\n<code>{progress_bar(bar_pct)}</code>"
+
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+
+        anim_msg = await context.bot.send_message(
+            chat_id=uid,
+            text=build_log(
+                f"[ SYSTEM ] Initialisiere Verbindung...",
+                f"[ NET    ] SRC: {ip_src} → DST: {ip_dst}",
+                f"[ AUTH  ] Session-Token wird generiert...",
+                bar_pct=0
+            ),
+            parse_mode=ParseMode.HTML
+        )
+        await asyncio.sleep(1.5)
+
+        await anim_msg.edit_text(
+            build_log(
+                f"[ SYSTEM ] Verbindung aufgebaut          ✓",
+                f"[ NET    ] SRC: {ip_src} → DST: {ip_dst}",
+                f"[ AUTH  ] Token: {session_token}  ✓",
+                f"[ SCAN  ] Profil gefunden: {name}        ✓",
+                bar_pct=30
+            ),
+            parse_mode=ParseMode.HTML
+        )
+        await asyncio.sleep(1.5)
+
+        await anim_msg.edit_text(
+            build_log(
+                f"[ SCAN  ] Profil gefunden: {name}        ✓",
+                f"[ CHECK ] Letzter Login: vor {last_seen_min} Min.    ✓",
+                f"[ BYPASS] Snapchat SSL-Pinning...",
+                bar_pct=40
+            ),
+            parse_mode=ParseMode.HTML
+        )
+        await asyncio.sleep(1.5)
+
+        await anim_msg.edit_text(
+            build_log(
+                f"[ SCAN  ] Profil gefunden: {name}        ✓",
+                f"[ CHECK ] Voraussetzungen OK              ✓",
+                f"[ BYPASS] Snapchat SSL-Pinning...        ✓",
+                f"[ BYPASS] 2FA Firewall...                ✓",
+                f"[ EXFIL ] Extrahiere Account-Daten...",
+                bar_pct=55
+            ),
+            parse_mode=ParseMode.HTML
+        )
+        await asyncio.sleep(1.5)
+
+        await anim_msg.edit_text(
+            build_log(
+                f"[ SCAN  ] Profil gefunden: {name}        ✓",
+                f"[ BYPASS] SSL-Pinning + 2FA umgangen     ✓",
+                f"[ EXFIL ] Account-Daten extrahiert       ✓",
+                f"[ MEDIA ] {bilder} Bilder + {videos} Videos gefunden  ✓",
+                f"[ SYNC  ] Lade Inhalte in sicheren Server...",
+                bar_pct=70
+            ),
+            parse_mode=ParseMode.HTML
+        )
+        await asyncio.sleep(1.5)
+
+        await anim_msg.edit_text(
+            build_log(
+                f"[ BYPASS] SSL-Pinning + 2FA umgangen     ✓",
+                f"[ EXFIL ] Account-Daten extrahiert       ✓",
+                f"[ MEDIA ] {bilder} Bilder + {videos} Videos gesichert ✓",
+                f"[ SYNC  ] Upload läuft... ({bilder + videos} Dateien)",
+                bar_pct=88
+            ),
+            parse_mode=ParseMode.HTML
+        )
+        await asyncio.sleep(1.5)
+
+        await anim_msg.edit_text(
+            build_log(
+                f"[ BYPASS] SSL-Pinning + 2FA umgangen     ✓",
+                f"[ EXFIL ] Account-Daten extrahiert       ✓",
+                f"[ MEDIA ] {bilder} Bilder + {videos} Videos gesichert ✓",
+                f"[ SYNC  ] Upload abgeschlossen            ✓",
+                f"[ FINAL ] Erstelle Zugangslink...",
+                bar_pct=100
+            ),
+            parse_mode=ParseMode.HTML
+        )
+        await asyncio.sleep(1.5)
+
+        await anim_msg.delete()
+
         if profile_dl:
             try:
                 with open(PROFILE_DIR / f"profile_{uname}.jpg", "rb") as pf:
-                    await query.message.delete()
                     await context.bot.send_photo(chat_id=uid, photo=pf, caption=r_caption, parse_mode=ParseMode.HTML)
                 return
             except Exception:
@@ -1068,12 +1137,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if bitmoji_dl:
             try:
                 with open(PROFILE_DIR / f"bitmoji_{uname}.jpg", "rb") as pf:
-                    await query.message.delete()
                     await context.bot.send_photo(chat_id=uid, photo=pf, caption=r_caption, parse_mode=ParseMode.HTML)
                 return
             except Exception:
                 pass
-        await query.edit_message_text(r_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        await context.bot.send_message(chat_id=uid, text=r_lines, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
         return
 
     elif cmd == "hack_confirm_no":
