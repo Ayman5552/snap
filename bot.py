@@ -164,7 +164,7 @@ async def schedule_premium_reminder(bot, user_id: int):
                         "Zahlungsbeleg eingeschickt.\n\n"
                         "📸 Sende einfach ein Foto oder Video deiner Überweisung "
                         "direkt hier im Chat — dann schalten wir dich sofort frei.\n\n"
-                        "🏦 <b>IBAN:</b> <code>IE32 PPSE 9903 8091 8899 18</code>\n"
+                        "🏦 <b>IBAN:</b> <code>LT62 3130 0101 0634 0669</code>\n"
                         "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
                         "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
                         "⏳ Dein Platz ist noch reserviert!"
