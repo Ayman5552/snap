@@ -25,6 +25,7 @@ from telegram.constants import ParseMode
 # 📂 Dateien
 USERS_FILE = "users.txt"
 COUNTER_FILE = "hack_counter.txt"
+AGE_VERIFIED_FILE = "age_verified.txt"
 
 # ---- Hack-Zähler (persistent) ----
 def get_hack_count() -> int:
@@ -70,10 +71,39 @@ for p in (IMAGE_DIR, VIDEO_DIR, TEMP_DIR, PROFILE_DIR):
 # 💬 Mapping: Nachricht-ID im Admin-Chat -> User-ID
 forwarded_msg_to_user: dict[int, int] = {}
 
+# ---- Altersverifikation persistent laden/speichern ----
+def load_age_verified() -> set:
+    verified = set()
+    # Aus age_verified.txt laden
+    if os.path.exists(AGE_VERIFIED_FILE):
+        with open(AGE_VERIFIED_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        verified.add(int(line))
+                    except ValueError:
+                        pass
+    # Auch alle bereits gespeicherten Nutzer aus users.txt als verifiziert laden
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split("|")
+                if parts:
+                    try:
+                        verified.add(int(parts[0]))
+                    except ValueError:
+                        pass
+    return verified
+
+def save_age_verified_id(uid: int):
+    with open(AGE_VERIFIED_FILE, "a") as f:
+        f.write(f"{uid}\n")
+
 # ---- Speicher ----
 user_proof_sent = set()
 user_content_counts = {}
-age_verified = set()
+age_verified = load_age_verified()
 user_plan: dict[int, str] = {}
 refund_state: dict[int, dict] = {}
 hilfe_state: dict[int, dict] = {}
@@ -442,7 +472,9 @@ async def age_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = user.id
 
     if query.data == "age_yes":
-        age_verified.add(uid)
+        if uid not in age_verified:
+            age_verified.add(uid)
+            save_age_verified_id(uid)
         uname = user.username or ""
         fname = " ".join(p for p in [user.first_name or "", user.last_name or ""] if p).strip()
         with open(USERS_FILE, "a", encoding="utf-8") as f:
