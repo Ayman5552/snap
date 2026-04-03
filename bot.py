@@ -415,8 +415,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     uname = user.username or ""
+    fname = " ".join(p for p in [user.first_name or "", user.last_name or ""] if p).strip()
     with open(USERS_FILE, "a", encoding="utf-8") as f:
-        f.write(f"{uid} {uname}\n")
+        f.write(f"{uid}|{uname}|{fname}\n")
 
     if uid not in user_plan:
         await update.message.reply_text(
@@ -442,8 +443,9 @@ async def age_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "age_yes":
         age_verified.add(uid)
         uname = user.username or ""
+        fname = " ".join(p for p in [user.first_name or "", user.last_name or ""] if p).strip()
         with open(USERS_FILE, "a", encoding="utf-8") as f:
-            f.write(f"{uid} {uname}\n")
+            f.write(f"{uid}|{uname}|{fname}\n")
         await query.edit_message_text(
             "✅ <b>Alter bestätigt!</b>\n\n" + PACKAGE_TEXT,
             parse_mode=ParseMode.HTML,
@@ -463,8 +465,32 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Noch keine Nutzer gespeichert.")
         return
     with open(USERS_FILE, "r", encoding="utf-8") as f:
-        data = f.read().strip()
-    await update.message.reply_text(f"📋 Gespeicherte Nutzer:\n\n{data}" if data else "Noch keine Nutzer gespeichert.")
+        raw_lines = f.read().strip().splitlines()
+    if not raw_lines:
+        await update.message.reply_text("Noch keine Nutzer gespeichert.")
+        return
+    seen_ids = set()
+    entries = []
+    for line in raw_lines:
+        parts = line.strip().split("|")
+        if len(parts) >= 3:
+            uid_s, uname_s, fname_s = parts[0], parts[1], parts[2]
+        elif len(parts) == 2:
+            uid_s, uname_s, fname_s = parts[0], parts[1], ""
+        else:
+            uid_s = parts[0].split()[0] if parts[0].split() else parts[0]
+            uname_s = parts[0].split()[1] if len(parts[0].split()) > 1 else ""
+            fname_s = ""
+        if uid_s in seen_ids:
+            continue
+        seen_ids.add(uid_s)
+        display = fname_s.strip() if fname_s.strip() else (f"@{uname_s}" if uname_s.strip() else "")
+        if display and uname_s.strip() and fname_s.strip():
+            display = f"{fname_s.strip()} (@{uname_s.strip()})"
+        line_out = f"{display} — ID: {uid_s}" if display else f"ID: {uid_s}"
+        entries.append(line_out)
+    text = "📋 <b>Gespeicherte Nutzer:</b>\n\n" + "\n".join(entries)
+    await update.message.reply_text(text, parse_mode="HTML")
 
 # ---- ADMIN: /send ----
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
