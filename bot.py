@@ -1697,10 +1697,21 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             label = user_label(from_user)
             del hilfe_state[user_id]
 
+            name_parts = [from_user.first_name or "", from_user.last_name or ""]
+            full_name = " ".join(p for p in name_parts if p).strip()
+            if from_user.username:
+                nutzer_info = f"@{from_user.username} | ID: <code>{user_id}</code>"
+                if full_name:
+                    nutzer_info += f" | {full_name}"
+            else:
+                nutzer_info = f"ID: <code>{user_id}</code>"
+                if full_name:
+                    nutzer_info += f" | {full_name}"
+
             ticket_text = (
                 f"🎫 <b>Neues Support-Ticket</b>\n"
                 f"<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-                f"👤 <b>Nutzer:</b> {label}\n"
+                f"👤 <b>Nutzer:</b> {nutzer_info}\n"
                 f"📧 <b>E-Mail:</b> <code>{email}</code>\n"
                 f"📝 <b>Grund:</b>\n{text}"
             )
@@ -1718,6 +1729,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
                 f"📧 <b>E-Mail:</b> <code>{email}</code>\n"
                 f"📝 <b>Dein Grund:</b>\n<i>{text}</i>\n\n"
+                "📸 <b>Wichtig:</b> Falls es um eine Zahlung oder einen Code geht, "
+                "sende uns am besten direkt ein <b>Foto oder Screenshot</b> als Beweis "
+                "hier im Chat — das beschleunigt die Bearbeitung erheblich.\n\n"
                 "⏳ Unser Team meldet sich so schnell wie möglich bei dir.\n\n"
                 "Bei dringenden Fragen erreichst du uns auch direkt: @HunterThe1",
                 parse_mode=ParseMode.HTML
