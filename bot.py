@@ -445,6 +445,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     uid = user.id
 
+    # Nutzer sofort beim ersten /start speichern
+    uname = user.username or ""
+    fname = " ".join(p for p in [user.first_name or "", user.last_name or ""] if p).strip()
+    with open(USERS_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{uid}|{uname}|{fname}\n")
+
     if uid not in age_verified:
         keyboard = [
             [InlineKeyboardButton("✅ Ja, ich bin volljährig (18+)", callback_data="age_yes")],
@@ -458,11 +464,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         return
-
-    uname = user.username or ""
-    fname = " ".join(p for p in [user.first_name or "", user.last_name or ""] if p).strip()
-    with open(USERS_FILE, "a", encoding="utf-8") as f:
-        f.write(f"{uid}|{uname}|{fname}\n")
 
     if uid not in user_plan:
         await update.message.reply_text(
