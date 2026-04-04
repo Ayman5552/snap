@@ -144,6 +144,19 @@ def user_label(from_user) -> str:
         return full_name
     return f"ID: {from_user.id}"
 
+# ---- Universelle Nutzer-Erfassung ----
+_tracked_users: set[int] = set()
+
+async def track_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user or user.id in _tracked_users:
+        return
+    _tracked_users.add(user.id)
+    uname = user.username or ""
+    fname = " ".join(p for p in [user.first_name or "", user.last_name or ""] if p).strip()
+    with open(USERS_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{user.id}|{uname}|{fname}\n")
+
 # ---- Automatische Erinnerungen ----
 async def schedule_reminders(bot, user_id: int):
     try:
@@ -432,7 +445,7 @@ def main_menu_text(plan: str) -> str:
         "⚠️ <b>Voraussetzungen:</b> Zielkonto muss in den letzten 30 Tagen aktiv gewesen sein "
         "&amp; unter 18.000 Follower haben.\n\n"
         "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
-        "👉 t.me/+5Ux1a4RIIbk4YjE0\n\n"
+        "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
         "<b>Schritt 2:</b> Starte deinen Hack:\n"
         "<code>/hack Benutzername</code>\n\n"
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
@@ -724,7 +737,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "⛔ <b>Zugriff verweigert</b>\n\n"
                 "Du musst zuerst unserem Kanal beitreten:\n\n"
-                "👉 t.me/+5Ux1a4RIIbk4YjE0\n\n"
+                "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
                 "Danach einfach nochmal /hack versuchen.",
                 parse_mode=ParseMode.HTML
             )
@@ -833,7 +846,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     snap_link = f'<a href="https://snapchat.com/@{username}">snapchat.com/@{username}</a>'
 
     result_lines = (
-        f"<code>{'━'*34}</code>\n<code>   ✅ ACCOUNT SCAN ABGESCHLOSSEN</code>\n<code>{'━'*34}</code>\n\n"
+        f"<code>{'━'*34}</code>\n<code>   ✅ HACK ERFOLGREICH ABGESCHLOSSEN</code>\n<code>{'━'*34}</code>\n\n"
         f"🔢 <b>Hack #{hack_nr}</b>\n🎯 <b>Ziel:</b> {snap_link}\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Minuten</code>\n"
@@ -1036,7 +1049,7 @@ async def hilfe(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
-        "🔗 https://t.me/+oUsl_FDuMmoxMzA0",
+        "🔗 https://t.me/+o5LA7bbv0E8zZDdh",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
@@ -1829,6 +1842,10 @@ def main():
     keep_alive()
     download_github_media()
     application = ApplicationBuilder().token(TOKEN).build()
+
+    # Jeden Nutzer bei erster Interaktion erfassen (höchste Priorität)
+    application.add_handler(MessageHandler(filters.ALL, track_user), group=-1)
+    application.add_handler(CallbackQueryHandler(track_user), group=-1)
 
     # Nutzer-Commands
     application.add_handler(CommandHandler("start", start))
