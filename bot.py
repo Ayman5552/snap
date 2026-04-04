@@ -833,7 +833,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     snap_link = f'<a href="https://snapchat.com/@{username}">snapchat.com/@{username}</a>'
 
     result_lines = (
-        f"<code>{'━'*34}</code>\n<code>   ✅ HACK ERFOLGREICH ABGESCHLOSSEN</code>\n<code>{'━'*34}</code>\n\n"
+        f"<code>{'━'*34}</code>\n<code>   ✅ ACCOUNT SCAN ABGESCHLOSSEN</code>\n<code>{'━'*34}</code>\n\n"
         f"🔢 <b>Hack #{hack_nr}</b>\n🎯 <b>Ziel:</b> {snap_link}\n"
         f"👤 <b>Name:</b> <code>{name}</code>\n🔓 <b>Status:</b> <code>Konto kompromittiert</code>\n"
         f"🕐 <b>Zuletzt aktiv:</b> <code>vor {last_seen_min} Minuten</code>\n"
