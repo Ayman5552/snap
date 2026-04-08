@@ -1049,7 +1049,7 @@ async def hilfe(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
-        "🔗 https://t.me/+o5LA7bbv0E8zZDdh",
+        "🔗 https://t.me/+7gj_pArVK_diM2Zk",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
