@@ -445,7 +445,7 @@ def main_menu_text(plan: str) -> str:
         "⚠️ <b>Voraussetzungen:</b> Zielkonto muss in den letzten 30 Tagen aktiv gewesen sein "
         "&amp; unter 18.000 Follower haben.\n\n"
         "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
-        "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
+        "👉 t.me/+qICdaAr6lE4yMzZh\n\n"
         "<b>Schritt 2:</b> Starte deinen Hack:\n"
         "<code>/hack Benutzername</code>\n\n"
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
