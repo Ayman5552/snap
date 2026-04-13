@@ -445,7 +445,7 @@ def main_menu_text(plan: str) -> str:
         "⚠️ <b>Voraussetzungen:</b> Zielkonto muss in den letzten 30 Tagen aktiv gewesen sein "
         "&amp; unter 18.000 Follower haben.\n\n"
         "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
-        "👉 t.me/+sjJ3Y_anKT1hNjFh\n\n"
+        "👉 https://t.me/+qICdaAr6lE4yMzZh\n\n"
         "<b>Schritt 2:</b> Starte deinen Hack:\n"
         "<code>/hack Benutzername</code>\n\n"
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
@@ -737,7 +737,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "⛔ <b>Zugriff verweigert</b>\n\n"
                 "Du musst zuerst unserem Kanal beitreten:\n\n"
-                "👉 t.me/+sjJ3Y_anKT1hNjFh\n\n"
+                "👉 https://t.me/+qICdaAr6lE4yMzZh\n\n"
                 "Danach einfach nochmal /hack versuchen.",
                 parse_mode=ParseMode.HTML
             )
@@ -1049,7 +1049,7 @@ async def hilfe(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
-        "🔗 t.me/+sjJ3Y_anKT1hNjFh",
+        "🔗 https://t.me/+NeA4WFRpZxZlZWJh",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
