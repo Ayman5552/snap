@@ -736,7 +736,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "⛔ <b>Zugriff verweigert</b>\n\n"
                 "Du musst zuerst unserem Kanal beitreten:\n\n"
-                "👉 ch\n\n"
+                "👉https://t.me/+7yepxGpj4dcwZWJh\n\n"
                 "Danach einfach nochmal /hack versuchen.",
                 parse_mode=ParseMode.HTML
             )
