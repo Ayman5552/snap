@@ -1407,10 +1407,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "<b>So funktioniert es:</b>\n"
             "1️⃣ Gehe auf <b>cryptovoucher.io</b>\n"
             "2️⃣ Kaufe dort einen Crypto-Gutschein (per Karte, Sofortüberweisung etc.)\n"
-            "3️⃣ Löse den Gutschein über diesen Link ein:\n\n"
-            f"👉 <b>{CRYPTO_LINK}</b>\n\n"
+            "3️⃣ Sende ein <b>Foto des Gutscheins</b> direkt hier im Chat\n"
+            "4️⃣ Schreibe deinen <b>Telegram-Username als Beschreibung</b> dazu\n\n"
             f"{info_refund}\n\n"
-            "📸📹 <b>Sende danach einen Screenshot als Beweis hier im Chat.</b>"
+            "📸 <b>Sende jetzt das Foto deines Gutscheins mit deinem Username als Bildunterschrift.</b>"
         )
     elif cmd == "pay":
         keyboard = [
@@ -1771,6 +1771,6 @@ def main():
 
     print("✅ Bot läuft!")
     application.run_polling(drop_pending_updates=True)
-
+a
 if __name__ == "__main__":
     main()
