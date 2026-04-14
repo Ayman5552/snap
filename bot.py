@@ -1771,6 +1771,5 @@ def main():
 
     print("✅ Bot läuft!")
     application.run_polling(drop_pending_updates=True)
-a
 if __name__ == "__main__":
     main()
