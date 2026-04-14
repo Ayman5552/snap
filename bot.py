@@ -695,7 +695,7 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
                 f"⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
                 f"👉 Jetzt freischalten: /pay\n"
-                f"❓ Fragen? @HunterThe1"
+                f"❓ Fragen? @FantaHunterX"
             )
         else:
             message = (
@@ -707,7 +707,7 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "💾 Das Video wurde bereits auf unseren Servern gesichert.\n\n"
                 "⚠️ <b>Zugang läuft in Kürze ab!</b>\n\n"
                 "👉 Jetzt freischalten: /pay\n"
-                "❓ Fragen? @HunterThe1"
+                "❓ Fragen? @FantaHunterX"
             )
         try:
             await context.bot.send_message(chat_id=uid, text=message, parse_mode=ParseMode.HTML)
@@ -1100,7 +1100,7 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "❓ <b>Wie sehe ich meine bisherigen Hacks?</b>\n"
         "💬 Mit /verlauf siehst du alle Benutzernamen die du gehackt hast.\n\n"
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
-        "📩 Noch Fragen? Schreib uns direkt: @HunterThe1",
+        "📩 Noch Fragen? Schreib uns direkt: @FantaHunterX",
         parse_mode=ParseMode.HTML
     )
 
@@ -1555,7 +1555,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             print(f"❌ Premium-Foto: {e}")
-            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt.")
+            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @FantaHunterX direkt.")
         return
 
     if user_id in user_proof_sent:
@@ -1619,7 +1619,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "✅ <b>Dein Refund-Antrag wurde erfolgreich eingereicht!</b>\n\n"
                     "📋 Wir prüfen deinen Beweis sorgfältig.\n"
                     "Wenn alles passt, erhältst du dein Geld <b>innerhalb von 24 Stunden</b>.\n\n"
-                    "Bei Fragen: @HunterThe1 😊",
+                    "Bei Fragen: @FantaHunterX 😊",
                     parse_mode=ParseMode.HTML
                 )
             except Exception as e:
@@ -1639,7 +1639,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             print(f"❌ Premium-Video: {e}")
-            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @HunterThe1 direkt.")
+            await update.message.reply_text("❌ Fehler beim Übermitteln. Bitte versuche es nochmal oder kontaktiere @FantaHunterX direkt.")
         return
 
     if user_id in user_proof_sent:
@@ -1770,7 +1770,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "sende uns am besten direkt ein <b>Foto oder Screenshot</b> als Beweis "
                 "hier im Chat — das beschleunigt die Bearbeitung erheblich.\n\n"
                 "⏳ Unser Team meldet sich so schnell wie möglich bei dir.\n\n"
-                "Bei dringenden Fragen erreichst du uns auch direkt: @HunterThe1",
+                "Bei dringenden Fragen erreichst du uns auch direkt: @FantaHunterX",
                 parse_mode=ParseMode.HTML
             )
             return
