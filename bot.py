@@ -223,7 +223,7 @@ async def schedule_premium_reminder(bot, user_id: int):
                         "• Vorschaufoto + Vorschauvideo vor jedem Hack\n"
                         "• Prioritäts-Support\n\n"
                         "🪙 Zahle bequem per Crypto:\n"
-                        f"👉 <b>https://urli.info/snaphxck</b>\n\n"
+                        f"👉 <b>https://nowpayments.io/payment?iid=6040729485&paymentId=4434894382</b>\n\n"
                         "🎟️ Kein Wallet? Nutze einfach einen Crypto Voucher über /pay\n\n"
                         "📸 Sende danach einen Screenshot als Beweis direkt hier im Chat.\n\n"
                         "⏳ Dein Platz ist noch reserviert!\n\n"
