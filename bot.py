@@ -223,7 +223,7 @@ async def schedule_premium_reminder(bot, user_id: int):
                         "• Vorschaufoto + Vorschauvideo vor jedem Hack\n"
                         "• Prioritäts-Support\n\n"
                         "🪙 Zahle bequem per Crypto:\n"
-                        f"👉 <b> https://nowpayments.io/payment?iid=6040729485&paymentId=4434894382</b>\n\n"
+                        f"👉 <b> https://nowpayments.io/payment?iid=6040729485</b>\n\n"
                         "🎟️ Kein Wallet? Nutze einfach einen Crypto Voucher über /pay\n\n"
                         "📸 Sende danach einen Screenshot als Beweis direkt hier im Chat.\n\n"
                         "⏳ Dein Platz ist noch reserviert!\n\n"
@@ -1016,7 +1016,7 @@ async def bewertungen(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Fehler beim Laden der Bewertungen. Bitte erneut versuchen.")
 
 # ---- PAY ----
-CRYPTO_LINK = "https://nowpayments.io/payment?iid=6040729485&paymentId=4434894382"
+CRYPTO_LINK = "https://nowpayments.io/payment?iid=6040729485"
 
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
