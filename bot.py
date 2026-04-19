@@ -445,7 +445,7 @@ def main_menu_text(plan: str) -> str:
         "⚠️ <b>Voraussetzungen:</b> Zielkonto muss in den letzten 30 Tagen aktiv gewesen sein "
         "&amp; unter 18.000 Follower haben.\n\n"
         "<b>Schritt 1:</b> Tritt unserem Kanal bei:\n"
-        "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
+        "👉 t.me/+7yepxGpj4dcwZWJh\n\n"
         "<b>Schritt 2:</b> Starte deinen Hack:\n"
         "<code>/hack Benutzername</code>\n\n"
         "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n"
@@ -737,7 +737,7 @@ async def hack(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "⛔ <b>Zugriff verweigert</b>\n\n"
                 "Du musst zuerst unserem Kanal beitreten:\n\n"
-                "👉 t.me/+7tgziUqjnZUyZDYx\n\n"
+                "👉 t.me/+7yepxGpj4dcwZWJh\n\n"
                 "Danach einfach nochmal /hack versuchen.",
                 parse_mode=ParseMode.HTML
             )
@@ -1010,7 +1010,7 @@ async def bewertungen(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += f"{sterne_map[i]} <b>@{user}</b>\n<i>{kommentar}</i>\n\n"
         text += (f"<code>{'━'*34}</code>\n📊 <b>Durchschnitt:</b> ⭐ 4.9 / 5\n"
                  f"👥 <b>Abgeschlossene Hacks:</b> <code>{gesamt}</code>\n"
-                 f"🔗 Mehr Bewertungen:  t.me/+7tgziUqjnZUyZDYx")
+                 f"🔗 Mehr Bewertungen:  t.me/+7yepxGpj4dcwZWJh")
         await update.message.reply_text(text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     except Exception as e:
         print(f"❌ Bewertungen Fehler: {e}")
@@ -1049,7 +1049,7 @@ async def hilfe(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def invite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎁 Lade Freunde ein und erhalte einen Free Hack!\n\n"
-        "🔗  t.me/+7tgziUqjnZUyZDYx",
+        "🔗  t.me/+7yepxGpj4dcwZWJh",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
