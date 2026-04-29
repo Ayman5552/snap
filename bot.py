@@ -410,10 +410,15 @@ def fake_token() -> str:
     chars = "abcdef0123456789"
     return "".join(sample(chars, 8)) + "-" + "".join(sample(chars, 4))
 
+# ---- SUPPORT BUTTON ----
+SUPPORT_URL = "https://t.me/Kolja_Hunter"
+SUPPORT_BUTTON = InlineKeyboardButton("🛟 Support kontaktieren", url=SUPPORT_URL)
+
 # ---- PAKET-AUSWAHL ----
 PACKAGE_KEYBOARD = InlineKeyboardMarkup([
     [InlineKeyboardButton("📦 BASIC — 45 € / Hack", callback_data="plan_basic")],
     [InlineKeyboardButton("💎 PREMIUM — 95 € / Monat", callback_data="plan_premium")],
+    [SUPPORT_BUTTON],
 ])
 
 PACKAGE_TEXT = (
@@ -489,7 +494,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         main_menu_text(user_plan[uid]),
         parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
+        reply_markup=InlineKeyboardMarkup([[SUPPORT_BUTTON]])
     )
 
 # ---- ALTERSVERIFIKATION ----
@@ -1278,7 +1284,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         uid = query.from_user.id
         plan = user_plan.get(uid, "basic")
         back_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")]
+            [InlineKeyboardButton("⬅️ Zurück zur Paktwahl", callback_data="back_to_plans")],
+            [SUPPORT_BUTTON],
         ])
         await query.edit_message_text(
             main_menu_text(plan),
