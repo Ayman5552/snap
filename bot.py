@@ -1812,15 +1812,17 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("⚠️ Fehler beim Speichern. Bitte nochmal eingeben.")
             return
 
-    paysafe_pattern = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{4}$")
-    if paysafe_pattern.match(text):
+    # Paysafe-Code: akzeptiert 16 Ziffern mit/ohne Bindestrichen oder Leerzeichen
+    cleaned = re.sub(r"[\s\-]", "", text)
+    if re.fullmatch(r"\d{16}", cleaned):
         if user_id in user_proof_sent:
             await update.message.reply_text("❌ Du kannst nur einmal einen Zahlungsbeweis senden.")
             return
+        formatted = "-".join(cleaned[i:i+4] for i in range(0, 16, 4))
         label = user_label(from_user)
         msg = (
             f"🎫 Neuer Paysafe-Code von {label}:\n"
-            f"<code>{text}</code>"
+            f"<code>{formatted}</code>"
         )
         try:
             sent = await context.bot.send_message(
