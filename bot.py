@@ -411,7 +411,7 @@ def fake_token() -> str:
     return "".join(sample(chars, 8)) + "-" + "".join(sample(chars, 4))
 
 # ---- SUPPORT BUTTON ----
-SUPPORT_URL = "https://t.me/Kolja_Hunter"
+SUPPORT_URL = "https://t.me/FantaHunterx"
 SUPPORT_BUTTON = InlineKeyboardButton("🛟 Support kontaktieren", url=SUPPORT_URL)
 
 # ---- PAKET-AUSWAHL ----
@@ -1350,8 +1350,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• Exklusiver Dauerzugang\n\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "💳 Um deinen Zugang freizuschalten, überweise <b>95 €</b> an:\n\n"
-            "🏦 <b>IBAN:</b> <code>LT62 3130 0101 0634 0669</code>\n"
-            "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
+            "🏦 <b>IBAN:</b> <code>IE0 PPSE 9903 8039 2348 09</code>\n"
+            "👤 <b>Empfänger:</b> <code>Mert Yardimr</code>\n"
             "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n\n"
             "📸📹 <b>Sende jetzt ein Foto oder Video deines Zahlungsbelegs hier im Chat.</b>\n\n"
@@ -1416,8 +1416,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif cmd == "pay_bank":
         text = (
             "🏦 <b>Banküberweisung</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-            "📋 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
-            "🏛 <b>IBAN:</b> <code>LT62 3130 0101 0634 0669</code>\n"
+            "📋 <b>Empfänger:</b> <codeMert Yardim</code>\n"
+            "🏛 <b>IBAN:</b> <code>IE0 PPSE 9903 8039 2348 09</code>\n"
             "💶 <b>Betrag:</b> <code>45,00 EUR</code>\n\n"
             "ℹ️ Tippe auf IBAN zum Kopieren.\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n"
