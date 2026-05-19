@@ -1350,7 +1350,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• Exklusiver Dauerzugang\n\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "💳 Um deinen Zugang freizuschalten, überweise <b>95 €</b> an:\n\n"
-            "🏦 <b>IBAN:</b> <code>IE0 PPSE 9903 8039 2348 09</code>\n"
+            "🏦 <b>IBAN:</b> <code>LT62 3130 0101 0634 0669</code>\n"
             "👤 <b>Empfänger:</b> <code>Mert Yardim</code>\n"
             "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n\n"
@@ -1417,7 +1417,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "📋 <b>Empfänger:</b> <code>Mert Yardim</code>\n"
-            "🏛 <b>IBAN:</b> <code>IE0 PPSE 9903 8039 2348 09</code>\n"
+            "🏛 <b>IBAN:</b> <code>LT62 3130 0101 0634 0669</code>\n"
             "💶 <b>Betrag:</b> <code>45,00 EUR</code>\n\n"
             "ℹ️ Tippe auf IBAN zum Kopieren.\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n"
