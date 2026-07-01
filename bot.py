@@ -1,6 +1,4 @@
-**Hier ist der vollständige aktualisierte Code** (Banküberweisung komplett entfernt):
-
-```python
+python
 import os
 import subprocess
 import time
