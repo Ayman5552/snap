@@ -1833,6 +1833,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
-
-**Fertig!** Kopiere den gesamten Code in deine Datei. Bank-Option ist komplett weg.
