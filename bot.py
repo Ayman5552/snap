@@ -224,8 +224,10 @@ async def schedule_premium_reminder(bot, user_id: int):
                         "• Prioritäts-Support\n\n"
                         "📸 Sende einfach ein Foto oder Video deiner Überweisung "
                         "direkt hier im Chat — dann schalten wir dich sofort frei.\n\n"
-                        "🏦 <b>IBAN:</b> <code></code>\n"
+                        "🏦 <b>IBAN:</b> <code>DE95 2022 0800 0040 9980 32</code>\n"
                         "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
+                        "🏦 <b>IBAN:</b> <code>IE32 PPSE 9903 8062 8467 60</code>\n"
+                        "👤 <b>Empfänger:</b> <code>Stephan Behrndt</code>\n"
                         "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
                         "⏳ Dein Platz ist noch reserviert!\n\n"
                         "❓ Fragen? Einfach <b>/hilfe</b> eingeben — wir antworten schnellstmöglich!"
@@ -593,7 +595,6 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     for line in lines:
         parts = line.strip().split("|")  # FIX: war split(), jetzt split("|")
-        parts = line.strip().split("|")
         if not parts:
             continue
         try:
@@ -672,7 +673,6 @@ async def remind_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     for line in lines:
         parts = line.strip().split("|")  # FIX: war split(), jetzt split("|")
-        parts = line.strip().split("|")
         if not parts:
             continue
         try:
@@ -1352,10 +1352,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• Exklusiver Dauerzugang\n\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "💳 Um deinen Zugang freizuschalten, überweise <b>95 €</b> an:\n\n"
-            "🏦 <b>IBAN:</b> <code>IE32 PPSE 9903 8062 8467 60</code>\n"
+            "🏦 <b>IBAN:</b> <code>DE95 2022 0800 0040 9980 32</code>\n"
             "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
+            "🏦 <b>IBAN:</b> <code>IE32 PPSE 9903 8062 8467 60</code>\n"
+            "👤 <b>Empfänger:</b> <code>Stephan Behrndt</code>\n"
             "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
-            "💳 Um deinen Zugang freizuschalten, nutze eine der folgenden Methoden (siehe /pay):\n\n"
             "⚠️ Auch wenn ein Fehler bei der Empfänger-Überprüfung kommt — einfach auf <i>Weiter</i> tippen.\n\n"
             "📸📹 <b>Sende jetzt ein Foto oder Video deines Zahlungsbelegs hier im Chat.</b>\n\n"
             "<i>Dein Konto wird nach Prüfung innerhalb weniger Minuten freigeschaltet.</i>",
@@ -1420,6 +1421,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             "🏦 <b>Banküberweisung</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "📋 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
+            "🏛 <b>IBAN:</b> <code>DE95 2022 0800 0040 9980 32</code>\n"
+            "📋 <b>Empfänger:</b> <code>Stephan Behrndt</code>\n"
             "🏛 <b>IBAN:</b> <code>IE32 PPSE 9903 8062 8467 60</code>\n"
             "💶 <b>Betrag:</b> <code>45,00 EUR</code>\n\n"
             "ℹ️ Tippe auf IBAN zum Kopieren.\n"
@@ -1604,7 +1607,6 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         state = refund_state[user_id]
         step = state.get("step")
         if step in ("bank_video", "paypal_video"):
-        if step in ("paypal_video",):
             method = state.get("method", "unbekannt")
             data = state.get("data", {})
             label = user_label(from_user)
@@ -1612,7 +1614,6 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 refund_info = f"🏦 IBAN: {data.get('iban', '?')}\n👤 Inhaber: {data.get('name', '?')}"
             else:
                 refund_info = f"💸 PayPal-E-Mail: {data.get('email', '?')}"
-            refund_info = f"💸 PayPal-E-Mail: {data.get('email', '?')}"
             admin_text = (
                 f"💸 <b>Refund-Antrag</b>\n\n"
                 f"👤 Nutzer: {label}\n"
@@ -1810,7 +1811,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
             elif step == "paypal_email":
-            if step == "paypal_email":
                 state["data"]["email"] = text
                 state["step"] = "paypal_video"
                 await update.message.reply_text(
