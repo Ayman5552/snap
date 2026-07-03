@@ -224,8 +224,6 @@ async def schedule_premium_reminder(bot, user_id: int):
                         "• Prioritäts-Support\n\n"
                         "📸 Sende einfach ein Foto oder Video deiner Überweisung "
                         "direkt hier im Chat — dann schalten wir dich sofort frei.\n\n"
-                        "🏦 <b>IBAN:</b> <code>DE95 2022 0800 0040 9980 32</code>\n"
-                        "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
                         "🏦 <b>IBAN:</b> <code>IE32 PPSE 9903 8062 8467 60</code>\n"
                         "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
                         "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
@@ -1352,8 +1350,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• Exklusiver Dauerzugang\n\n"
             "<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
             "💳 Um deinen Zugang freizuschalten, überweise <b>95 €</b> an:\n\n"
-            "🏦 <b>IBAN:</b> <code>DE95 2022 0800 0040 9980 32</code>\n"
-            "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
             "🏦 <b>IBAN:</b> <code>IE32 PPSE 9903 8062 8467 60</code>\n"
             "👤 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
             "💶 <b>Betrag:</b> <code>95,00 EUR</code>\n\n"
@@ -1420,8 +1416,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif cmd == "pay_bank":
         text = (
             "🏦 <b>Banküberweisung</b>\n<code>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</code>\n\n"
-            "📋 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
-            "🏛 <b>IBAN:</b> <code>DE95 2022 0800 0040 9980 32</code>\n"
             "📋 <b>Empfänger:</b> <code>Euro Hunter</code>\n"
             "🏛 <b>IBAN:</b> <code>IE32 PPSE 9903 8062 8467 60</code>\n"
             "💶 <b>Betrag:</b> <code>45,00 EUR</code>\n\n"
